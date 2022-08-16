@@ -1,7 +1,7 @@
 classdef (Abstract) FeasibilityDrivenBase
     
    methods (Abstract, Access = public)
-       update(obj)
+       solve(obj)
    end 
 
    properties (Abstract, Access = protected)

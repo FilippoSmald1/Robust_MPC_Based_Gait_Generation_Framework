@@ -1,11 +1,11 @@
-classdef GaitGeneration < FeasibilityDrivenBase
+classdef RecoveryMode < FeasibilityDrivenBase
     
     methods (Access = public)
-        function obj = GaitGeneration(obj)
+        function obj = RecoveryMode(obj)
             obj.a = 2;
             obj.test = 2;
         end
-        function obj = update(obj)
+        function obj = solve(obj)
             
         end
     end

@@ -1,6 +1,6 @@
 # Robust_MPC_Based_Gait_Generation_Framework
-implementation example of the scheme for robust MPC-based gait generation:
+implementation example in Matlab & Octave of the scheme for robust MPC-based gait generation:
 
-![BlockSchemeCh9](https://user-images.githubusercontent.com/59538523/184869104-294b383f-636d-48be-8b4a-1862480ac0ee.png)
+![BlockSchemeCh9](https://user-images.githubusercontent.com/59538523/185087473-30bbec5a-c195-4ee2-8bb9-83f40830dadb.png)
 
-working on Matlab & Octave
+

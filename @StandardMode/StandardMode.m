@@ -10,9 +10,9 @@ classdef StandardMode < FeasibilityDrivenBase
         end
     end
     
-    %properties (Access = public)
-    %    a = 1;
-    %end
+    properties (Access = public)
+     a = 1;
+    end
     
     properties (Access = private)
         a

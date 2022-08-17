@@ -9,10 +9,16 @@ classdef RobustGaitGenerationScheme
             obj.input = input;
             obj.sm_instance = StandardMode(obj.input);
             obj.rm_instance = RecoveryMode(obj.input);
-            obj.dob_instance = DisturbanceObserver(obj.input, state);  
+            obj.dob_instance = DisturbanceObserver(obj.input, state);
+            obj.restriction_builder = BuildRestrictionFunction(obj.input);
+            obj.restriction_builder.plotRestrictions();
+            pause;
         end
 
         function obj = update(obj, state)
+            
+             % 
+             
              % control cycle
              zmpdot = zeros(2,1);
              obj.dob_instance.update([state.x(1,1); state.x(3,1)], ...
@@ -38,10 +44,11 @@ classdef RobustGaitGenerationScheme
 
     properties (Access = private)
         
+        input;
         sm_instance;
         rm_instance;
         dob_instance;
-        input;
+        restriction_builder;
         
     end
     

@@ -14,7 +14,7 @@ if using_octave
 end
 
 
-%% input data for the scheme
+%% input structure defining the footstep plan and robot parameters
 input = struct;
 
 % parameters of the scheme
@@ -30,11 +30,11 @@ input.scheme_parameters.P = floor(input.scheme_parameters.T_p / input.scheme_par
 input.scheme_parameters.M = 2; % optimized footstep
 input.scheme_parameters.F = 4; % available footstep from the plan at each time
 input.scheme_parameters.midrange = [0.3; 0.3]; % (w_mx, w_my) in m/s^2
-input.scheme_parameters.dist_range = [0.25; 0.25];  % (Deltaw_mx, Deltaw_my) in m/s^2
-input.scheme_parameters.alpha = 0.25;
+input.scheme_parameters.dist_range = [0.3; 0.3];  % (Deltaw_mx, Deltaw_my) in m/s^2
+input.scheme_parameters.alpha = 0.5;
 input.scheme_parameters.mi_max = 0.000025;
 input.scheme_parameters.gamma_max = 0.00099;
-input.scheme_parameters.epsilon = 0.005;
+input.scheme_parameters.epsilon = 0.0005;
 input.scheme_parameters.d_z = 0.1; % support polygon square width
 input.scheme_parameters.d_ax = 0.5; % kinematic admissible region x dimension
 input.scheme_parameters.d_ay = 0.25; % kinematic admissible region y dimension
@@ -94,7 +94,7 @@ simulation_parameters.sim_time = 5;
 simulation_parameters.sim_iter = 1;
 
 
-%% state data 
+%% state structure
 state = struct;
 state.x = zeros(3,1);
 state.y = zeros(3,1);
@@ -105,7 +105,7 @@ state.footstep_counter = 1; % to query data from the plan
 state.iter = 1;
 
 
-%% log data
+%% log structure
 logs = struct;
 logs.x_store = zeros(3, floor(simulation_parameters.sim_time/simulation_parameters.delta)); % x_c, x_dot_c, x_z
 logs.y_store = zeros(3, floor(simulation_parameters.sim_time/simulation_parameters.delta)); % y_c, y_dot_c, y_z

@@ -4,7 +4,7 @@ classdef DisturbanceObserver
 
         function obj = DisturbanceObserver(input, init_state)
 
-            obj.input = input;
+            obj.input = input;  
 
             ch = cosh(input.scheme_parameters.eta*input.scheme_parameters.delta);
             sh = sinh(input.scheme_parameters.eta*input.scheme_parameters.delta);
@@ -62,6 +62,7 @@ classdef DisturbanceObserver
         function w_bar = getDisturbance(obj)
 
                  w_bar = obj.w_bar;
+                 
         end
 
     end

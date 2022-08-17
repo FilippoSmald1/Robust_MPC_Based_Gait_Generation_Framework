@@ -5,7 +5,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clc; clf; clear all;
+clc; clf; clear all; close all;
 
 using_octave = false;
 if using_octave
@@ -14,7 +14,7 @@ if using_octave
 end
 
 
-%% input structure defining the footstep plan and robot parameters
+%% input data for the scheme
 input = struct;
 
 % parameters of the scheme
@@ -30,11 +30,11 @@ input.scheme_parameters.P = floor(input.scheme_parameters.T_p / input.scheme_par
 input.scheme_parameters.M = 2; % optimized footstep
 input.scheme_parameters.F = 4; % available footstep from the plan at each time
 input.scheme_parameters.midrange = [0.3; 0.3]; % (w_mx, w_my) in m/s^2
-input.scheme_parameters.dist_range = [0.3; 0.3];  % (Deltaw_mx, Deltaw_my) in m/s^2
-input.scheme_parameters.alpha = 0.5;
+input.scheme_parameters.dist_range = [0.25; 0.25];  % (Deltaw_mx, Deltaw_my) in m/s^2
+input.scheme_parameters.alpha = 0.25;
 input.scheme_parameters.mi_max = 0.000025;
 input.scheme_parameters.gamma_max = 0.00099;
-input.scheme_parameters.epsilon = 0.0005;
+input.scheme_parameters.epsilon = 0.005;
 input.scheme_parameters.d_z = 0.1; % support polygon square width
 input.scheme_parameters.d_ax = 0.5; % kinematic admissible region x dimension
 input.scheme_parameters.d_ay = 0.25; % kinematic admissible region y dimension
@@ -50,7 +50,10 @@ input.footstep_plan.timings = zeros(input.footstep_plan.total_step_number,1);
 input.footstep_plan.running_steps = zeros(input.footstep_plan.total_step_number,1);
 input.footstep_plan.ds_duration = 0.2; % it is convenient to set a fixed duration for the double support
                                        % this can still be modified by the Step Timing Adaptation module
+input.footstep_plan.ds_samples = floor(input.footstep_plan.ds_duration / input.scheme_parameters.delta);                                       
 input.footstep_plan.starting_sf = "right";
+input.footstep_plan.tail_x;
+input.footstep_plan.tail_x;
 input.sim_time = 10;
 
 % build a simple footstep plan in the world frame
@@ -94,7 +97,7 @@ simulation_parameters.sim_time = 5;
 simulation_parameters.sim_iter = 1;
 
 
-%% state structure
+%% state data 
 state = struct;
 state.x = zeros(3,1);
 state.y = zeros(3,1);
@@ -102,10 +105,11 @@ state.sf_pos = zeros(3,1); % position of the current support foot
 state.current_sf = input.footstep_plan.starting_sf;
 state.base_orient = eye(3);
 state.footstep_counter = 1; % to query data from the plan
-state.iter = 1;
+state.step_time_iter = 1;
+state.world_time_iter = 1;
 
 
-%% log structure
+%% log data
 logs = struct;
 logs.x_store = zeros(3, floor(simulation_parameters.sim_time/simulation_parameters.delta)); % x_c, x_dot_c, x_z
 logs.y_store = zeros(3, floor(simulation_parameters.sim_time/simulation_parameters.delta)); % y_c, y_dot_c, y_z

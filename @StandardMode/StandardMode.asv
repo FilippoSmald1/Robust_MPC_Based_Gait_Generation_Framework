@@ -37,10 +37,9 @@ classdef StandardMode < FeasibilityDrivenBase
             obj.feasibility_region = [obj.x_u_m; obj.x_u_M; obj.y_u_m; obj.y_u_M];
             
             is_feasible = false;
-            obj.x_u = state.x(1,1) + state.x(2,1) / obj.input.scheme_parameters.eta;
-            obj.y_u = state.y(1,1) + state.y(2,1) / obj.input.scheme_parameters.eta; 
-            if (obj.x_u >= obj.x_u_m && obj.x_u <= obj.x_u_M) && (obj.y_u >= obj.y_u_m && obj.y_u <= obj.y_u_M)
-                is_feasible = true;    
+            
+            if
+                
             end
         end
         
@@ -52,8 +51,6 @@ classdef StandardMode < FeasibilityDrivenBase
         x_u_M;
         y_u_m;
         y_u_M;
-        x_u;
-        y_u;
         feasibility_region;
         centerline_multiplier;
         tail_multiplier;

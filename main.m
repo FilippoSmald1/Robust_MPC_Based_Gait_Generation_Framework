@@ -5,7 +5,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clc; clf; clear all;
+clc; clf; clear all; close all;
 
 using_octave = false;
 if using_octave
@@ -50,7 +50,12 @@ input.footstep_plan.timings = zeros(input.footstep_plan.total_step_number,1);
 input.footstep_plan.running_steps = zeros(input.footstep_plan.total_step_number,1);
 input.footstep_plan.ds_duration = 0.2; % it is convenient to set a fixed duration for the double support
                                        % this can still be modified by the Step Timing Adaptation module
+input.footstep_plan.ds_samples = floor(input.footstep_plan.ds_duration / input.scheme_parameters.delta);                                       
 input.footstep_plan.starting_sf = "right";
+input.footstep_plan.tail_x = zeros(input.scheme_parameters.P - input.scheme_parameters.C, 1);
+input.footstep_plan.tail_y = zeros(input.scheme_parameters.P - input.scheme_parameters.C, 1);
+input.footstep_plan.zmp_centerline_x = zeros(input.scheme_parameters.C, 1);
+input.footstep_plan.zmp_centerline_y = zeros(input.scheme_parameters.C, 1);
 input.sim_time = 10;
 
 % build a simple footstep plan in the world frame
@@ -98,11 +103,13 @@ simulation_parameters.sim_iter = 1;
 state = struct;
 state.x = zeros(3,1);
 state.y = zeros(3,1);
+state.w_bar = zeros(2,1);
 state.sf_pos = zeros(3,1); % position of the current support foot
 state.current_sf = input.footstep_plan.starting_sf;
 state.base_orient = eye(3);
 state.footstep_counter = 1; % to query data from the plan
-state.iter = 1;
+state.step_time_iter = 1;
+state.world_time_iter = 1;
 
 
 %% log data

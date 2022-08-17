@@ -4,8 +4,8 @@ classdef (Abstract) FeasibilityDrivenBase
        solve(state)
    end 
 
-   properties (Abstract, Access = protected)
-       test
-   end 
+   %properties (Abstract, Access = protected)
+   %    a
+   %end 
     
 end

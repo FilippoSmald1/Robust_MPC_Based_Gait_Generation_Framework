@@ -63,7 +63,7 @@ classdef RobustGaitGenerationScheme
              
              % feasibility check (only if cleared by the obstacle
              % detection)
-             obj.sm_instance.feasibilityCheck(state, obj.input);
+               
                
              % maybe STA (?) 
                % recovery mode . STA

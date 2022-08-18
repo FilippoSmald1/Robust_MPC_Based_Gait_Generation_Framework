@@ -34,7 +34,8 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.b_eq = zeros(1);
             
             obj.restriction_builder = BuildRestrictionFunction(obj.input);
-            obj.restriction_x = restriction_x = getRestrictionX(
+            obj.restriction_x = obj.restriction_builder.getRestrictionX();
+            obj.restriction_y = obj.restriction_builder.getRestrictionY();
             
         end
         
@@ -43,8 +44,8 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.input = input;    
             
             % x component           
-            obj.b_ineq(1:obj.input.scheme_parameters.C, 1) = - state.x(3,1) + obj.input.footstep_plan.zmp_centerline_x + obj.input.scheme_parameters.d_z / 2;
-            obj.b_ineq(obj.input.scheme_parameters.C : 2 * obj.input.scheme_parameters.C - 1, 1) = + state.x(3,1) - obj.input.footstep_plan.zmp_centerline_x + obj.input.scheme_parameters.d_z / 2;
+            obj.b_ineq(1:obj.input.scheme_parameters.C, 1) = - state.x(3,1) + obj.input.footstep_plan.zmp_centerline_x + obj.input.scheme_parameters.d_z / 2 - obj.restriction_x;
+            obj.b_ineq(obj.input.scheme_parameters.C : 2 * obj.input.scheme_parameters.C - 1, 1) = + state.x(3,1) - obj.input.footstep_plan.zmp_centerline_x + obj.input.scheme_parameters.d_z / 2 - obj.restriction_x;
             
             obj.b_eq = state.x(1,1) + state.x(2,1) / obj.input.scheme_parameters.eta ...
                        - state.x(3,1) * (1 - exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.T_c)) ...
@@ -56,8 +57,8 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             u(1,1) = solution(1);
             
             % y component
-            obj.b_ineq(1:obj.input.scheme_parameters.C, 1) = - state.y(3,1) + obj.input.footstep_plan.zmp_centerline_y + obj.input.scheme_parameters.d_z / 2;
-            obj.b_ineq(obj.input.scheme_parameters.C : 2 * obj.input.scheme_parameters.C - 1, 1) = + state.y(3,1) - obj.input.footstep_plan.zmp_centerline_y + obj.input.scheme_parameters.d_z / 2;
+            obj.b_ineq(1:obj.input.scheme_parameters.C, 1) = - state.y(3,1) + obj.input.footstep_plan.zmp_centerline_y + obj.input.scheme_parameters.d_z / 2 - obj.restriction_y;
+            obj.b_ineq(obj.input.scheme_parameters.C : 2 * obj.input.scheme_parameters.C - 1, 1) = + state.y(3,1) - obj.input.footstep_plan.zmp_centerline_y + obj.input.scheme_parameters.d_z / 2 - obj.restriction_y;
             
             obj.b_eq = state.y(1,1) + state.y(2,1) / obj.input.scheme_parameters.eta ...
                        - state.y(3,1) * (1 - exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.T_c)) ...

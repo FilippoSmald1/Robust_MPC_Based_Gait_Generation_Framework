@@ -1,4 +1,4 @@
-classdef DisturbanceObserver
+classdef DisturbanceObserver < handle
 
     methods (Access = public)
 
@@ -61,7 +61,7 @@ classdef DisturbanceObserver
 
         function w_bar = getDisturbance(obj)
 
-                 w_bar = obj.w_bar;
+                 w_bar = 0 * obj.w_bar;
                  
         end
 

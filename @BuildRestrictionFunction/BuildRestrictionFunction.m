@@ -1,4 +1,4 @@
-classdef BuildRestrictionFunction
+classdef BuildRestrictionFunction < handle
    
     methods (Access = public)
         

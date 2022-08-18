@@ -1,7 +1,9 @@
-classdef (Abstract) FeasibilityDrivenBase
+classdef (Abstract) FeasibilityDrivenBase < handle
     
    methods (Abstract, Access = public)
-       solve(state)
+       [u, ftstp] = solve(state)
+       result = getFeasibilityRegion(obj)
+       computeFeasibilityRegion(state, input);
    end 
 
    %properties (Abstract, Access = protected)

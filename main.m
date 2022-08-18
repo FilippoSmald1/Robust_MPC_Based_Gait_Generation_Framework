@@ -29,7 +29,7 @@ input.scheme_parameters.C = floor(input.scheme_parameters.T_c / input.scheme_par
 input.scheme_parameters.P = floor(input.scheme_parameters.T_p / input.scheme_parameters.delta);
 input.scheme_parameters.M = 2; % optimized footstep
 input.scheme_parameters.F = 4; % available footstep from the plan at each time
-input.scheme_parameters.midrange = [0.3; 0.3]; % (w_mx, w_my) in m/s^2
+input.scheme_parameters.midrange = [0.0; 0.0]; % (w_mx, w_my) in m/s^2
 input.scheme_parameters.dist_range = [0.25; 0.25];  % (Deltaw_mx, Deltaw_my) in m/s^2
 input.scheme_parameters.alpha = 0.25;
 input.scheme_parameters.mi_max = 0.000025;
@@ -44,10 +44,10 @@ input.scheme_parameters.ell = 0.2; % kinematic admissible region y displacement
 % footstep plan
 input.footstep_plan = struct;
 input.footstep_plan.total_step_number = 10;
-input.footstep_plan.positions = zeros(input.footstep_plan.total_step_number,3);
-input.footstep_plan.orientations = zeros(input.footstep_plan.total_step_number,3);
-input.footstep_plan.timings = zeros(input.footstep_plan.total_step_number,1);
-input.footstep_plan.running_steps = zeros(input.footstep_plan.total_step_number,1);
+input.footstep_plan.positions = zeros(input.footstep_plan.total_step_number + 4,3);
+input.footstep_plan.orientations = zeros(input.footstep_plan.total_step_number + 4,3);
+input.footstep_plan.timings = zeros(input.footstep_plan.total_step_number + 4,1);
+input.footstep_plan.running_steps = zeros(input.footstep_plan.total_step_number + 4,1);
 input.footstep_plan.ds_duration = 0.2; % it is convenient to set a fixed duration for the double support
                                        % this can still be modified by the Step Timing Adaptation module
 input.footstep_plan.ds_samples = floor(input.footstep_plan.ds_duration / input.scheme_parameters.delta);                                       
@@ -62,10 +62,14 @@ input.sim_time = 10;
 stride_length_x = 0.2;
 lateral_displacement_y = 0.09;
 
-for i = 1:input.footstep_plan.total_step_number
+number_of_virtual_steps = 4;
 
+for i = 1 : input.footstep_plan.total_step_number + number_of_virtual_steps
+     
    % footstep positions
-   input.footstep_plan.positions(i, 1) = (i-1) * stride_length_x;
+   if i > 1
+       input.footstep_plan.positions(i, 1) = (i-2) * stride_length_x;
+   end
    if input.footstep_plan.starting_sf == "right"
        input.footstep_plan.positions(i, 2) = (- 1) ^ (i - 1) * lateral_displacement_y;
    else
@@ -83,6 +87,10 @@ for i = 1:input.footstep_plan.total_step_number
      % zeros
 
 end
+
+% trick: model the initial double support as a 
+% square centered between the feet
+%input.footstep_plan.positions(1, 2) = 0;
 
 % print the footstep plan
 disp('input.footstep_plan.positions - (x,y,z) [m]')
@@ -105,6 +113,7 @@ state.x = zeros(3,1);
 state.y = zeros(3,1);
 state.w_bar = zeros(2,1);
 state.sf_pos = zeros(3,1); % position of the current support foot
+state.next_sf_pos = zeros(3,1);
 state.current_sf = input.footstep_plan.starting_sf;
 state.base_orient = eye(3);
 state.footstep_counter = 1; % to query data from the plan
@@ -121,24 +130,28 @@ logs.w = zeros(2, floor(simulation_parameters.sim_time/simulation_parameters.del
 logs.actual_footsteps = zeros(3, input.footstep_plan.total_step_number); % x, y, z
 
 
+%% initialize plotter
+plotter = Plotter(logs, input);
+
+
 %% CONTROLLER & SIMULATION START OPERATING HERE:
 %
 %
 %
 %
+%% initialize the Robust Gait Generation Framework
+wpg = RobustGaitGenerationScheme(input, state); % walking pattern generator
+
+
 %% request back-up maneuver to initialize the controller (simulated)
 % On a physical or multi-body simulated robot, this maneuver would consist in
 % moving the CoM towards a feasible initialization for the MPC scheme:
 % to do so, a simple polynomial interpolation from the current to the
 % target CoM position is sufficient (to be tracked, e.g., via inverse kinematics).
 % Here, we simply set the state to a proper initial value.
-state.x(1,1) = - input.scheme_parameters.midrange(1,1) / input.scheme_parameters.eta ^ 2;
-state.y(1,1) = - input.scheme_parameters.midrange(2,1) / input.scheme_parameters.eta ^ 2;
-
-
-
-%% initialize the Robust Gait Generation Framework
-wpg = RobustGaitGenerationScheme(input, state); % walking pattern generator
+init_state_proposal = wpg.proposeFeasibleInitialState(state);
+state.x(1,1) = init_state_proposal(1,1);
+state.y(1,1) = init_state_proposal(3,1);
 
 
 %% simulation cycle
@@ -148,13 +161,23 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     simulation_parameters.sim_iter = sim_iter;
 
     % get measurement (simulate pertuebations)
-
+    %state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * pertrubation;
+    
     % solve step of gait generation algorithm
-    wpg.update(state);
+    state = wpg.update(state);
+
 
     % store logs
+    logs.x_store(:, sim_iter) = state.x;
+    logs.y_store(:, sim_iter) = state.y;
     logs.w_bar(:, simulation_parameters.sim_iter) = wpg.getDisturbance();
-
+    logs.actual_footsteps(:, state.footstep_counter) = state.sf_pos;
+    
+    if mod(sim_iter, 25) == 0
+        plotter.plotLogs(logs, state);
+    end
+    
+   
 end
 %
 %
@@ -165,9 +188,11 @@ end
 %% plot the logs
 time = 0 : simulation_parameters.delta : simulation_parameters.sim_time - simulation_parameters.delta;
 
+%{
 f = figure(1);
 clf;
 hold on;
 grid on;
 plot(time', logs.w_bar(1, :)', 'Linewidth', 2);
 pbaspect([2 1 1]);
+%}

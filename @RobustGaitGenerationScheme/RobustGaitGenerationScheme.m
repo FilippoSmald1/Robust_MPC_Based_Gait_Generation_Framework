@@ -32,6 +32,10 @@ classdef RobustGaitGenerationScheme < handle
             obj.D_upd = [0;
                          delta;
                          0];
+                     
+            obj.mode = 'standard_mode';
+            obj.obstacles_are_present = false;
+            obj.feasibility_region = [0; 0; 0; 0];
             
         end
 
@@ -53,7 +57,6 @@ classdef RobustGaitGenerationScheme < handle
              obj.dob_instance.update([state.x(1,1); state.x(3,1)], ...
                                      [state.y(1,1); state.y(3,1)], ...
                                      obj.u);  
-             %disp(obj.dob_instance.getDisturbance())
              state.w_bar = obj.dob_instance.getDisturbance();
              
              
@@ -62,7 +65,11 @@ classdef RobustGaitGenerationScheme < handle
              
              % feasibility check (only if cleared by the obstacle
              % detection)
-             obj.sm_instance.feasibilityCheck(state, obj.input);
+             if obj.sm_instance.feasibilityCheck(state, obj.input) && ~obj.obstacles_are_present
+                obj.mode = 'standard_mode'; 
+             else
+                obj.mode = 'recovery_mode'; 
+             end
 
                
              % maybe STA (?) 
@@ -70,7 +77,13 @@ classdef RobustGaitGenerationScheme < handle
     
                
              % control cycle
-             [obj.u, obj.ftstp] = obj.sm_instance.solve(state, obj.input);
+             if obj.mode == 'standard_mode'
+                 [obj.u, obj.ftstp] = obj.sm_instance.solve(state, obj.input);
+                 obj.feasibility_region = obj.sm_instance.getFeasibilityRegion();
+                 state.feasibility_region = obj.feasibility_region;
+             else
+                 
+             end
              
              % integrate LIP
              state = obj.integrateModel(state, obj.u);
@@ -88,18 +101,6 @@ classdef RobustGaitGenerationScheme < handle
              if mod(state.world_time_iter, 20) == 0
                 stop = true;
              end            
-        end
-
-        function w_bar = getDisturbance(obj)
-
-            w_bar = obj.dob_instance.getDisturbance();
-
-        end
-        
-        function data = getModifiedInputStructure(obj)
-
-            data = obj.input;
-
         end
         
         function init_state_proposal = proposeFeasibleInitialState(obj, state)
@@ -156,6 +157,26 @@ classdef RobustGaitGenerationScheme < handle
              obj.input.footstep_plan.tail_y = obj.centerline_temp_temp_y(index + obj.input.scheme_parameters.C: index + obj.input.scheme_parameters.P - 1, 1);                                                                                                
             
         end
+        
+        % getters
+        
+        function w_bar = getDisturbance(obj)
+
+            w_bar = obj.dob_instance.getDisturbance();
+
+        end
+        
+        function data = getModifiedInputStructure(obj)
+
+            data = obj.input;
+
+        end     
+        
+        function data = getCurrentFeasibilityRegion(obj)
+
+            data = obj.input;
+
+        end          
 
     end
     
@@ -186,6 +207,9 @@ classdef RobustGaitGenerationScheme < handle
         A_upd;
         B_upd;
         D_upd;
+        mode;
+        feasibility_region;
+        obstacles_are_present;
 
         
         % buffers

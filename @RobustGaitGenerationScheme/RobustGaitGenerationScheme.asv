@@ -32,25 +32,30 @@ classdef RobustGaitGenerationScheme < handle
             obj.D_upd = [0;
                          delta;
                          0];
+                     
+            obj.mode = 'standard_mode';
+            obj.feasibility_region = [0; 0; 0; 0];
             
         end
 
         function state_ = update(obj, state)
             
              % update current footstep counter when new step begins
-             if state.step_time_iter >= obj.input.footstep_plan.timings(state.footstep_counter + 1, 1)
+             if state.world_time_iter >= round(obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta)
                 state.step_time_iter = 1;
                 state.footstep_counter = state.footstep_counter + 1;
+                state.sf_pos
+                state.sf_pos = state.next_sf_pos; 
+                
              end
             
              % detect obstacles
              % TODO
              
              % observer
-             zmpdot = zeros(2,1);
              obj.dob_instance.update([state.x(1,1); state.x(3,1)], ...
                                      [state.y(1,1); state.y(3,1)], ...
-                                     zmpdot);  
+                                     obj.u);  
              state.w_bar = obj.dob_instance.getDisturbance();
              
              
@@ -59,19 +64,28 @@ classdef RobustGaitGenerationScheme < handle
              
              % feasibility check (only if cleared by the obstacle
              % detection)
-             obj.sm_instance.feasibilityCheck(state, obj.input);
+             if obj.sm_instance.feasibilityCheck(state, obj.input)
+                obj.mode = 'standard_mode'; 
+             else
+                obj.mode = 'recovery_mode'; 
+             end
+
                
              % maybe STA (?) 
                % recovery mode . STA
     
                
              % control cycle
-             [obj.u, obj.ftstp] = obj.sm_instance.solve(state, obj.input);
+             if obj.mode == 'standard_mode';
+                 [obj.u, obj.ftstp] = obj.sm_instance.solve(state, obj.input);
+             else
+                 
+             end
              
              % integrate LIP
              state = obj.integrateModel(state, obj.u);
              
-             state.sf_pos = obj.input.footstep_plan.positions(state.footstep_counter, 1:3)';
+             
              state.next_sf_pos = obj.ftstp;
              
              
@@ -81,19 +95,9 @@ classdef RobustGaitGenerationScheme < handle
              
              % return updated state structure
              state_ = state;
-             
-        end
-
-        function w_bar = getDisturbance(obj)
-
-            w_bar = obj.dob_instance.getDisturbance();
-
-        end
-        
-        function data = getModifiedInputStructure(obj)
-
-            data = obj.input;
-
+             if mod(state.world_time_iter, 20) == 0
+                stop = true;
+             end            
         end
         
         function init_state_proposal = proposeFeasibleInitialState(obj, state)
@@ -143,13 +147,33 @@ classdef RobustGaitGenerationScheme < handle
                  
              end
              
-             index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta );
+             index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
              obj.input.footstep_plan.zmp_centerline_x = obj.centerline_temp_temp_x(index : index + obj.input.scheme_parameters.C - 1, 1);
              obj.input.footstep_plan.zmp_centerline_y = obj.centerline_temp_temp_y(index : index + obj.input.scheme_parameters.C - 1, 1);
              obj.input.footstep_plan.tail_x = obj.centerline_temp_temp_x(index + obj.input.scheme_parameters.C: index + obj.input.scheme_parameters.P - 1, 1);                                                                           
              obj.input.footstep_plan.tail_y = obj.centerline_temp_temp_y(index + obj.input.scheme_parameters.C: index + obj.input.scheme_parameters.P - 1, 1);                                                                                                
             
         end
+        
+        % getters
+        
+        function w_bar = getDisturbance(obj)
+
+            w_bar = obj.dob_instance.getDisturbance();
+
+        end
+        
+        function data = getModifiedInputStructure(obj)
+
+            data = obj.input;
+
+        end     
+        
+        function data = getCurrentFeasibilityRegion(obj)
+
+            data = obj.input;
+
+        end          
 
     end
     
@@ -158,8 +182,8 @@ classdef RobustGaitGenerationScheme < handle
         function state_ = integrateModel(obj, state, u)
             
             state_ = state;
-            state_.x = obj.A_upd * state.x + obj.B_upd * u(1,1) + obj.D_upd * state.w_bar(1,1);
-            state_.y = obj.A_upd * state.y + obj.B_upd * u(2,1) + obj.D_upd * state.w_bar(2,1);
+            state_.x = obj.A_upd * state.x + obj.B_upd * u(1,1);
+            state_.y = obj.A_upd * state.y + obj.B_upd * u(2,1);
             
         end
         
@@ -180,6 +204,8 @@ classdef RobustGaitGenerationScheme < handle
         A_upd;
         B_upd;
         D_upd;
+        mode;
+        feasibility_region;
 
         
         % buffers

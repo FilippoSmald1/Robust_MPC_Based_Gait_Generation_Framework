@@ -155,8 +155,4 @@ classdef StandardMode < FeasibilityDrivenBase & handle
         
     end
     
-    %properties (Access = protected)
-    %    input = 1;
-    %end
-    
 end

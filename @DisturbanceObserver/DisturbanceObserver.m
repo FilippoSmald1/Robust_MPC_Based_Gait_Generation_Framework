@@ -8,8 +8,8 @@ classdef DisturbanceObserver < handle
 
             ch = cosh(input.scheme_parameters.eta*input.scheme_parameters.delta);
             sh = sinh(input.scheme_parameters.eta*input.scheme_parameters.delta);
-            eta = input.scheme_parameters.eta; % temp variable to enlight the writing
-            delta = input.scheme_parameters.delta; % temp variable to enlight the writing
+            eta = input.scheme_parameters.eta; % temp variable for clarity
+            delta = input.scheme_parameters.delta; 
             obj.A_upd_obs = [ch, sh/eta, 1-ch, 0; 
                              eta*sh, ch, -eta*sh, delta; 
                              0, 0, 1, 0; 
@@ -67,7 +67,6 @@ classdef DisturbanceObserver < handle
 
     end
 
-
     properties (Access = private)
 
         A_upd_obs;
@@ -82,7 +81,5 @@ classdef DisturbanceObserver < handle
         is_saturator_active;
 
     end
-
-
 
 end

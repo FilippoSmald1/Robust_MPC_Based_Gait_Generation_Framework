@@ -6,8 +6,4 @@ classdef (Abstract) FeasibilityDrivenBase < handle
        computeFeasibilityRegion(state, input);
    end 
 
-   %properties (Abstract, Access = protected)
-   %    a
-   %end 
-    
 end

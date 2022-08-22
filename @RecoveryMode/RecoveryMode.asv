@@ -31,12 +31,12 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
                  eye(obj.input.scheme_parameters.M, obj.input.scheme_parameters.M);
             obj.mapping = zeros(obj.input.scheme_parameters.C, obj.input.scheme_parameters.M + 1);
              
-            obj.d_ax = obj.input.scheme_parameters.d_ax; % this is the default kinematic admissible region (can be modified)
+            obj.d_ax = obj.input.scheme_parameters.d_ax; % this is the default kinematic admissible region
             obj.d_ay = obj.input.scheme_parameters.d_ay;
             obj.ell = obj.input.scheme_parameters.ell;
-            obj.d_ax_subsequent = obj.input.scheme_parameters.d_ax_subsequent; % this is never modified
-            obj.d_ay_subsequent = obj.input.scheme_parameters.d_ay_subsequent;
-            obj.ell_subsequent = obj.input.scheme_parameters.ell_subsequent;            
+            obj.d_ax = obj.input.scheme_parameters.d_ax_subsequent; % this is the default kinematic admissible region
+            obj.d_ay = obj.input.scheme_parameters.d_ay_subsequent;
+            obj.ell = obj.input.scheme_parameters.ell_subsequent;            
             
         end
         
@@ -101,12 +101,10 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
         b_zmp_constr;
         A_kinematic_constr;
         b_kinematic_constr;
+        mapping;
         d_ax;
         d_ay;
         ell;
-        d_ax_subsequent;
-        d_ay_subsequent;
-        ell_subsequent;        
                    
     end
     

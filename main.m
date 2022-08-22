@@ -30,7 +30,7 @@ input.scheme_parameters.P = floor(input.scheme_parameters.T_p / input.scheme_par
 input.scheme_parameters.M = 2; % optimized footstep
 input.scheme_parameters.F = 4; % available footstep from the plan at each time
 input.scheme_parameters.midrange = [0.0; 0.0]; % (w_mx, w_my) in m/s^2
-input.scheme_parameters.dist_range = [0.3; 0.3];  % (Deltaw_mx, Deltaw_my) in m/s^2
+input.scheme_parameters.dist_range = [0.03; 0.03];  % (Deltaw_mx, Deltaw_my) in m/s^2
 input.scheme_parameters.alpha = 0.25;
 input.scheme_parameters.mi_max = 0.000025;
 input.scheme_parameters.gamma_max = 0.00099;
@@ -39,6 +39,9 @@ input.scheme_parameters.d_z = 0.1; % support polygon square width
 input.scheme_parameters.d_ax = 0.5; % kinematic admissible region x dimension
 input.scheme_parameters.d_ay = 0.25; % kinematic admissible region y dimension
 input.scheme_parameters.ell = 0.2; % kinematic admissible region y displacement
+input.scheme_parameters.d_ax_subsequent = 0.5; % kinematic admissible region x dimension
+input.scheme_parameters.d_ay_subsequent = 0.25; % kinematic admissible region y dimension
+input.scheme_parameters.ell_subsequent = 0.2; % kinematic admissible region y displacement
 
 
 % footstep plan
@@ -56,6 +59,7 @@ input.footstep_plan.tail_x = zeros(input.scheme_parameters.P - input.scheme_para
 input.footstep_plan.tail_y = zeros(input.scheme_parameters.P - input.scheme_parameters.C, 1);
 input.footstep_plan.zmp_centerline_x = zeros(input.scheme_parameters.C, 1);
 input.footstep_plan.zmp_centerline_y = zeros(input.scheme_parameters.C, 1);
+input.footstep_plan.mapping_buffer = zeros(2 * input.scheme_parameters.P, input.scheme_parameters.M + 1);
 input.sim_time = 10;
 
 % build a simple footstep plan in the world frame
@@ -112,7 +116,7 @@ state = struct;
 state.x = zeros(3,1);
 state.y = zeros(3,1);
 state.w_bar = zeros(2,1);
-state.sf_pos = zeros(3,1); % position of the current support foot
+state.sf_pos = input.footstep_plan.positions(1, 1:3)'; % position of the current support foot
 state.next_sf_pos = zeros(3,1);
 state.current_sf = input.footstep_plan.starting_sf;
 state.feasibility_region = [0; 0; 0; 0];

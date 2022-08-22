@@ -15,6 +15,7 @@ classdef RobustGaitGenerationScheme < handle
             obj.centerline_temp_temp_y = zeros(2 * obj.input.scheme_parameters.P, 1); 
             obj.centerline_temp_x = cell(obj.input.scheme_parameters.F + 1, 1);
             obj.centerline_temp_y = cell(obj.input.scheme_parameters.F + 1, 1);
+            obj.mapping_buffer = zeros(2 * obj.input.scheme_parameters.P, obj.input.scheme_parameters.F + 2);
             
             obj.u = [0; 0]; % zmp velocity command (x,y)
             obj.ftstp = [0; 0; 0];  % footstep position (x,y)
@@ -52,6 +53,10 @@ classdef RobustGaitGenerationScheme < handle
             
              % detect obstacles
              % TODO
+             
+             % TODO: nonconvex handling -> modify the input.d_ax,
+             % input.d_ay, input. ell
+             % 
              
              % observer
              obj.dob_instance.update([state.x(1,1); state.x(3,1)], ...
@@ -143,8 +148,13 @@ classdef RobustGaitGenerationScheme < handle
                                             (0 : obj.input.footstep_plan.ds_samples - 1)' / obj.input.footstep_plan.ds_samples; ...
                                             obj.steps_in_horizon(i + 1, 2) * ones(obj.ss_samples ,1)]; 
                  
-                 obj.centerline_temp_temp_x(time_counter :  time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, 1) = obj.centerline_temp_x{i};                    
-                 obj.centerline_temp_temp_y(time_counter :  time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, 1) = obj.centerline_temp_y{i};                  
+                 obj.centerline_temp_temp_x(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, 1) = obj.centerline_temp_x{i};                    
+                 obj.centerline_temp_temp_y(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, 1) = obj.centerline_temp_y{i};                  
+                 
+                 obj.mapping_buffer(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, i + 1) = [(0 : obj.input.footstep_plan.ds_samples - 1)' / obj.input.footstep_plan.ds_samples; ...
+                                                                                                                                    ones(obj.ss_samples ,1)];
+                 obj.mapping_buffer(time_counter : time_counter + obj.input.footstep_plan.ds_samples, i) = flip((0 : obj.input.footstep_plan.ds_samples)' / obj.input.footstep_plan.ds_samples);
+                                                                                                                                
                  time_counter = time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples;
                  
                  
@@ -155,7 +165,8 @@ classdef RobustGaitGenerationScheme < handle
              obj.input.footstep_plan.zmp_centerline_y = obj.centerline_temp_temp_y(index : index + obj.input.scheme_parameters.C - 1, 1);
              obj.input.footstep_plan.tail_x = obj.centerline_temp_temp_x(index + obj.input.scheme_parameters.C: index + obj.input.scheme_parameters.P - 1, 1);                                                                           
              obj.input.footstep_plan.tail_y = obj.centerline_temp_temp_y(index + obj.input.scheme_parameters.C: index + obj.input.scheme_parameters.P - 1, 1);                                                                                                
-            
+             obj.input.footstep_plan.mapping = obj.mapping_buffer(index : index + obj.input.scheme_parameters.C - 1, 1 : obj.input.scheme_parameters.M + 1);
+             
         end
         
         % getters
@@ -219,6 +230,7 @@ classdef RobustGaitGenerationScheme < handle
         centerline_temp_temp_x;
         centerline_temp_temp_y;      
         ss_samples;
+        mapping_buffer;
         
     end
     

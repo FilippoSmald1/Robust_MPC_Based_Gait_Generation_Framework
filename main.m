@@ -29,8 +29,8 @@ input.scheme_parameters.C = floor(input.scheme_parameters.T_c / input.scheme_par
 input.scheme_parameters.P = floor(input.scheme_parameters.T_p / input.scheme_parameters.delta);
 input.scheme_parameters.M = 2; % optimized footstep
 input.scheme_parameters.F = 4; % available footstep from the plan at each time
-input.scheme_parameters.midrange = [0.0; 0.0]; % (w_mx, w_my) in m/s^2
-input.scheme_parameters.dist_range = [0.25; 0.25];  % (Deltaw_mx, Deltaw_my) in m/s^2
+input.scheme_parameters.midrange = [0.2; 0.2]; % (w_mx, w_my) in m/s^2
+input.scheme_parameters.dist_range = [0.3; 0.3];  % (Deltaw_mx, Deltaw_my) in m/s^2
 input.scheme_parameters.alpha = 0.25;
 input.scheme_parameters.mi_max = 0.000025;
 input.scheme_parameters.gamma_max = 0.00099;
@@ -161,7 +161,8 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     simulation_parameters.sim_iter = sim_iter;
 
     % get measurement (simulate pertuebations)
-    %state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * pertrubation;
+    state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/3)) ;
+    state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/5)) ;
     
     % solve step of gait generation algorithm
     state = wpg.update(state);

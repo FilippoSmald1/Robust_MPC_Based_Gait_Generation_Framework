@@ -50,10 +50,10 @@ classdef RobustGaitGenerationScheme < handle
              % TODO
              
              % observer
-             zmpdot = zeros(2,1);
-             %obj.dob_instance.update([state.x(1,1); state.x(3,1)], ...
-             %                        [state.y(1,1); state.y(3,1)], ...
-             %                        zmpdot);  
+             obj.dob_instance.update([state.x(1,1); state.x(3,1)], ...
+                                     [state.y(1,1); state.y(3,1)], ...
+                                     obj.u);  
+             %disp(obj.dob_instance.getDisturbance())
              state.w_bar = obj.dob_instance.getDisturbance();
              
              

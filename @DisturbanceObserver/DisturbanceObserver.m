@@ -34,11 +34,11 @@ classdef DisturbanceObserver < handle
 
         function obj = update(obj, x_measurements, y_measurements, control_input)
      
-            obj.state_x = obj.A_upd_obs * obj.state_x + obj.B_upd_obs * control_input(1,1) - ...
+            obj.state_x = obj.A_upd_obs * obj.state_x + obj.B_upd_obs * control_input(1,1) + ...
                           obj.G' * (x_measurements - obj.C_measurable_output * obj.state_x);
-            obj.state_y = obj.A_upd_obs * obj.state_y + obj.B_upd_obs * control_input(2,1) - ...
+            obj.state_y = obj.A_upd_obs * obj.state_y + obj.B_upd_obs * control_input(2,1) + ...
                           obj.G' * (y_measurements - obj.C_measurable_output * obj.state_y);
-            
+
             if obj.is_saturator_active
                 obj.w_bar(1,1) = quadprog(1, -obj.state_x(4), ...
                                         [1; -1; 1; -1], ...
@@ -61,7 +61,7 @@ classdef DisturbanceObserver < handle
 
         function w_bar = getDisturbance(obj)
 
-                 w_bar = 0 * obj.w_bar;
+                 w_bar = obj.w_bar;
                  
         end
 

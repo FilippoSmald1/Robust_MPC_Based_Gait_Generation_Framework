@@ -50,6 +50,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.b_eq = state.x(1,1) + state.x(2,1) / obj.input.scheme_parameters.eta ...
                        - state.x(3,1) * (1 - exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.T_c)) ...
                        - obj.tail_multiplier * obj.input.footstep_plan.tail_x ...
+                       - obj.input.footstep_plan.tail_x(end,1) * exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.T_p) ...
                        + state.w_bar(1,1) / obj.input.scheme_parameters.eta ^ 2;
         
             obj.f = - 2 * obj.zmp_tracking_weight * (obj.input.footstep_plan.zmp_centerline_x' - state.x(3,1)) * obj.P_matrix;
@@ -63,6 +64,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.b_eq = state.y(1,1) + state.y(2,1) / obj.input.scheme_parameters.eta ...
                        - state.y(3,1) * (1 - exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.T_c)) ...
                        - obj.tail_multiplier * obj.input.footstep_plan.tail_y ...
+                       - obj.input.footstep_plan.tail_y(end,1) * exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.T_p) ...
                        + state.w_bar(2,1) / obj.input.scheme_parameters.eta ^ 2;
           
             obj.f = - 2 * obj.zmp_tracking_weight * (obj.input.footstep_plan.zmp_centerline_y' - state.y(3,1)) * obj.P_matrix;
@@ -70,7 +72,12 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             u(2,1) = solution(1);
             
             % next footstep is given by the plan
-            ftstp = obj.input.footstep_plan.positions(state.footstep_counter + 1, 1:3)';
+            index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
+            if index <= obj.input.footstep_plan.ds_samples 
+                ftstp = obj.input.footstep_plan.positions(state.footstep_counter + 1, 1:3)';
+            else
+                ftstp = obj.input.footstep_plan.positions(state.footstep_counter + 2, 1:3)';
+            end
  
         end
         

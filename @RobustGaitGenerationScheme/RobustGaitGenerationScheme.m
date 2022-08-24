@@ -43,11 +43,50 @@ classdef RobustGaitGenerationScheme < handle
         function state_ = update(obj, state)
             
              % update current footstep counter when new step begins
-             if state.world_time_iter >= round(obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta)
+             if state.world_time_iter == round( (obj.input.footstep_plan.timings(state.footstep_counter, 1))/ obj.input.scheme_parameters.delta) + obj.input.footstep_plan.ds_samples
+           
+                state.sf_pos = state.next_sf_pos;
+                if state.current_sf == "right"
+                   state.current_sf = "left"; 
+                else
+                   state.current_sf = "right"; 
+                end
+                
+                state.footstep_counter_rm = state.footstep_counter_rm + 1;
+                state.sf_pos_ss = state.next_sf_pos;  
+
+
+                obj.input.footstep_plan.positions(state.footstep_counter, :) = state.sf_pos';
+
+                %obj.input.footstep_plan.positions(state.footstep_counter, :) = state.sf_pos';
+                
+             end
+             
+             if state.world_time_iter == round(obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta)
+
+                 
                 state.step_time_iter = 1;
-                state.footstep_counter = state.footstep_counter + 1;
-                state.sf_pos
+               % state.footstep_counter = state.footstep_counter + 1;
+               % state.footstep_counter_rm = state.footstep_counter + 1;
+                %state.sf_pos
+                %if state.current_sf == "right"
+                %   state.current_sf = "left"; 
+                %else
+                %   state.current_sf = "right"; 
+                %end                
                 state.sf_pos = state.next_sf_pos; 
+                state.sf_pos_ss = state.next_sf_pos;
+                state.footstep_counter = state.footstep_counter + 1;
+                state.footstep_counter_sm = state.footstep_counter + 1;
+                
+                difference = obj.input.footstep_plan.positions(state.footstep_counter + 1, :) - state.sf_pos_ss';  
+                if abs(difference(1)) ~= 0 
+                   1 
+                end
+                obj.input.footstep_plan.positions(state.footstep_counter + 1, :) = state.sf_pos';
+                obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 1) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 1) - difference(1);
+                obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 2) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 2) - difference(2);
+                obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 3) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 3) - difference(3);                 
                 
              end
             
@@ -75,7 +114,7 @@ classdef RobustGaitGenerationScheme < handle
              else
                 obj.mode = 'recovery_mode'; 
              end
-
+             obj.mode = 'recovery_mode';
                
              % maybe STA (?) 
                % recovery mode . STA
@@ -87,7 +126,7 @@ classdef RobustGaitGenerationScheme < handle
                  obj.feasibility_region = obj.sm_instance.getFeasibilityRegion();
                  state.feasibility_region = obj.feasibility_region;
              else
-                 
+                 [obj.u, obj.ftstp] = obj.rm_instance.solve(state, obj.input);                
              end
              
              % integrate LIP
@@ -133,6 +172,9 @@ classdef RobustGaitGenerationScheme < handle
         
         function obj = zmpTrajectoryGenerator(obj, state)
             
+             index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
+             obj.mapping_buffer(:,:) = 0;
+                              
              obj.steps_in_horizon(1 : obj.input.scheme_parameters.F + 2, :) = ...
                  obj.input.footstep_plan.positions(state.footstep_counter : state.footstep_counter + obj.input.scheme_parameters.F + 1, 1:2);
              
@@ -142,19 +184,25 @@ classdef RobustGaitGenerationScheme < handle
                  obj.ss_samples = round( (obj.input.footstep_plan.timings(i + 1, 1) - obj.input.footstep_plan.timings(i, 1)) / obj.input.scheme_parameters.delta ) - ...
                                   obj.input.footstep_plan.ds_samples;
                  obj.centerline_temp_x{i} = [obj.steps_in_horizon(i, 1) + (obj.steps_in_horizon(i + 1, 1) - obj.steps_in_horizon(i, 1)) * ...
-                                            (0 : obj.input.footstep_plan.ds_samples - 1)' / obj.input.footstep_plan.ds_samples; ...
+                                            (1 : obj.input.footstep_plan.ds_samples )' / obj.input.footstep_plan.ds_samples; ...
                                             obj.steps_in_horizon(i + 1, 1) * ones(obj.ss_samples ,1)];
                  obj.centerline_temp_y{i} = [obj.steps_in_horizon(i, 2) + (obj.steps_in_horizon(i + 1, 2) - obj.steps_in_horizon(i, 2)) * ...
-                                            (0 : obj.input.footstep_plan.ds_samples - 1)' / obj.input.footstep_plan.ds_samples; ...
+                                            (1 : obj.input.footstep_plan.ds_samples )' / obj.input.footstep_plan.ds_samples; ...
                                             obj.steps_in_horizon(i + 1, 2) * ones(obj.ss_samples ,1)]; 
                  
                  obj.centerline_temp_temp_x(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, 1) = obj.centerline_temp_x{i};                    
                  obj.centerline_temp_temp_y(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, 1) = obj.centerline_temp_y{i};                  
                  
-                 obj.mapping_buffer(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, i + 1) = [(0 : obj.input.footstep_plan.ds_samples - 1)' / obj.input.footstep_plan.ds_samples; ...
-                                                                                                                                    ones(obj.ss_samples ,1)];
-                 obj.mapping_buffer(time_counter : time_counter + obj.input.footstep_plan.ds_samples, i) = flip((0 : obj.input.footstep_plan.ds_samples)' / obj.input.footstep_plan.ds_samples);
-                                                                                                                                
+                 if index <= obj.input.footstep_plan.ds_samples
+                     obj.mapping_buffer(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, i + 1) = [(0 : obj.input.footstep_plan.ds_samples - 1)' / obj.input.footstep_plan.ds_samples; ...
+                                                                                                                                        ones(obj.ss_samples ,1)];
+                     obj.mapping_buffer(time_counter : time_counter + obj.input.footstep_plan.ds_samples - 1, i) = flip((1 : obj.input.footstep_plan.ds_samples )' / obj.input.footstep_plan.ds_samples);
+                 else
+                     obj.mapping_buffer(time_counter : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, i) = [ones(obj.ss_samples ,1); ...
+                                                                                                                                     flip((1 : obj.input.footstep_plan.ds_samples )' / obj.input.footstep_plan.ds_samples)];
+                     obj.mapping_buffer(time_counter + obj.ss_samples : time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples - 1, i + 1) = (0 : obj.input.footstep_plan.ds_samples - 1)' / obj.input.footstep_plan.ds_samples;
+                 end
+                 
                  time_counter = time_counter + obj.ss_samples + obj.input.footstep_plan.ds_samples;
                  
                  
@@ -165,8 +213,11 @@ classdef RobustGaitGenerationScheme < handle
              obj.input.footstep_plan.zmp_centerline_y = obj.centerline_temp_temp_y(index : index + obj.input.scheme_parameters.C - 1, 1);
              obj.input.footstep_plan.tail_x = obj.centerline_temp_temp_x(index + obj.input.scheme_parameters.C: index + obj.input.scheme_parameters.P - 1, 1);                                                                           
              obj.input.footstep_plan.tail_y = obj.centerline_temp_temp_y(index + obj.input.scheme_parameters.C: index + obj.input.scheme_parameters.P - 1, 1);                                                                                                
-             obj.input.footstep_plan.mapping = obj.mapping_buffer(index : index + obj.input.scheme_parameters.C - 1, 1 : obj.input.scheme_parameters.M + 1);
-             
+             if index <= obj.input.footstep_plan.ds_samples
+                 obj.input.footstep_plan.mapping = obj.mapping_buffer(index : index + obj.input.scheme_parameters.C - 1, 1 : obj.input.scheme_parameters.M + 1);
+             else
+                 obj.input.footstep_plan.mapping = obj.mapping_buffer(index - obj.input.footstep_plan.ds_samples : index + obj.input.scheme_parameters.C - 1 - obj.input.footstep_plan.ds_samples, 1 : obj.input.scheme_parameters.M + 1);                 
+             end
         end
         
         % getters

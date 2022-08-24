@@ -40,7 +40,7 @@ classdef Plotter < handle
                         state.y(1,1) + state.y(2,1)/ obj.input.scheme_parameters.eta,...
                         'g','Linewidth',2);
             axis equal
-            axis([-0.1 1.7 -0.25 0.35])   
+            axis([-0.1 2.7 -0.25 0.55])   
             pbaspect([2 1 1]);
             legend([com, zmp, feas_region_patch, dcm], {'CoM', 'ZMP', 'current feas region', 'current dcm'});
             

@@ -27,7 +27,7 @@ input.scheme_parameters.T_c = 0.7; % prediction horizon
 input.scheme_parameters.T_p = 2.5; % preview horizon
 input.scheme_parameters.C = floor(input.scheme_parameters.T_c / input.scheme_parameters.delta);
 input.scheme_parameters.P = floor(input.scheme_parameters.T_p / input.scheme_parameters.delta);
-input.scheme_parameters.M = 3; % optimized footstep
+input.scheme_parameters.M = 2; % optimized footstep
 input.scheme_parameters.F = 4; % available footstep from the plan at each time
 input.scheme_parameters.midrange = [0.0; 0.0]; % (w_mx, w_my) in m/s^2
 input.scheme_parameters.dist_range = [0.03; 0.03];  % (Deltaw_mx, Deltaw_my) in m/s^2
@@ -38,12 +38,26 @@ input.scheme_parameters.epsilon = 0.005;
 input.scheme_parameters.d_z = 0.1; % support polygon square width
 input.scheme_parameters.d_ax = 0.5; % kinematic admissible region x dimension
 input.scheme_parameters.d_ay = 0.25; % kinematic admissible region y dimension
+input.scheme_parameters.ell_x = 0.0; % kinematic admissible region y displacement
+input.scheme_parameters.ell_y = 0.2; % kinematic admissible region y displacement
 input.scheme_parameters.ell = 0.2; % kinematic admissible region y displacement
 input.scheme_parameters.d_ax_subsequent = 0.5; % kinematic admissible region x dimension
 input.scheme_parameters.d_ay_subsequent = 0.25; % kinematic admissible region y dimension
 input.scheme_parameters.ell_subsequent = 0.2; % kinematic admissible region y displacement
+input.scheme_parameters.ell_x_subsequent = 0.0; % kinematic admissible region y displacement
+input.scheme_parameters.ell_y_subsequent = 0.2; % kinematic admissible region y displacement
 input.scheme_parameters.footstep_weight_in_cost_function = 1000000;
 input.scheme_parameters.zmp_track_in_cost_function = 0.01;
+
+
+% to handle non-convex constraints
+input.kar = struct;
+input.kar.number_of_subregions = 3;
+input.kar.subregion_parameters = [input.scheme_parameters.d_ax, input.scheme_parameters.ell_x, input.scheme_parameters.d_ay, input.scheme_parameters.ell_y; ...
+                                  0.15, 0.175, 0.15, 0.3; ...
+                                  0.15, -0.175, 0.15, 0.3];
+
+
 
 
 % footstep plan
@@ -65,7 +79,7 @@ input.footstep_plan.mapping_buffer = zeros(2 * input.scheme_parameters.P, input.
 input.sim_time = 10;
 
 % build a simple footstep plan in the world frame
-stride_length_x = 0.2;
+stride_length_x = 0.15;
 lateral_displacement_y = 0.09;
 
 number_of_virtual_steps = 4;
@@ -87,7 +101,7 @@ for i = 1 : input.footstep_plan.total_step_number + number_of_virtual_steps
      % zeros
 
    % timings
-   input.footstep_plan.timings(i, 1) = 1 * (i - 1);
+   input.footstep_plan.timings(i, 1) = 1 *  (i - 1);
 
    % mapping to define the running steps (for further developments)
      % zeros
@@ -109,7 +123,7 @@ disp(input.footstep_plan.timings)
 %% simulation parameters
 simulation_parameters = struct;
 simulation_parameters.delta = input.scheme_parameters.delta; %TODO: enable different operating frequencies
-simulation_parameters.sim_time = 8;
+simulation_parameters.sim_time = 3;
 simulation_parameters.sim_iter = 1;
 
 
@@ -139,6 +153,9 @@ logs.y_store = zeros(3, floor(simulation_parameters.sim_time/simulation_paramete
 logs.w_bar = zeros(2, floor(simulation_parameters.sim_time/simulation_parameters.delta)); % w_bar_x, w_bar_y
 logs.w = zeros(2, floor(simulation_parameters.sim_time/simulation_parameters.delta)); % w_x, w_y
 logs.actual_footsteps = zeros(3, input.footstep_plan.total_step_number); % x, y, z
+logs.feasibility_region = zeros(4, floor(simulation_parameters.sim_time/simulation_parameters.delta));
+logs.feasibility_region_2 = zeros(4, floor(simulation_parameters.sim_time/simulation_parameters.delta));
+logs.feasibility_region_3 = zeros(4, floor(simulation_parameters.sim_time/simulation_parameters.delta));
 
 
 %% initialize plotter
@@ -186,6 +203,9 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     logs.y_store(:, sim_iter) = state.y;
     logs.w_bar(:, simulation_parameters.sim_iter) = wpg.getDisturbance();
     logs.actual_footsteps(:, state.footstep_counter) = state.sf_pos;
+    logs.feasibility_region(:, sim_iter) = state.feasibility_region(:, 1);
+    logs.feasibility_region_2(:, sim_iter) = state.feasibility_region(:, 2);
+    logs.feasibility_region_3(:, sim_iter) = state.feasibility_region(:, 3);
 
     if sim_iter == 3
         plotter.plotLogs(logs, state);
@@ -204,6 +224,25 @@ end
 
 %% plot the logs
 time = 0 : simulation_parameters.delta : simulation_parameters.sim_time - simulation_parameters.delta;
+figure(2)
+hold on
+grid on
+plot(logs.feasibility_region(1,:))
+plot(logs.feasibility_region(2,:))
+plot(logs.feasibility_region_2(1,:))
+plot(logs.feasibility_region_2(2,:))
+plot(logs.feasibility_region_3(1,:))
+plot(logs.feasibility_region_3(2,:))
+
+figure(3)
+hold on
+grid on
+plot(logs.feasibility_region(3,:))
+plot(logs.feasibility_region(4,:))
+%plot(logs.feasibility_region_2(3,:))
+%plot(logs.feasibility_region_2(4,:))
+%plot(logs.feasibility_region_3(3,:))
+%plot(logs.feasibility_region_3(4,:))
 
 %{
 f = figure(1);
@@ -212,4 +251,10 @@ hold on;
 grid on;
 plot(time', logs.w_bar(1, :)', 'Linewidth', 2);
 pbaspect([2 1 1]);
+
+figure(2)
+hold on
+grid on
+plot(logs.feasibility_region(1,:))
+plot(logs.feasibility_region(2,:))
 %}

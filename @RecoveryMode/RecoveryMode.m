@@ -81,7 +81,7 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
             obj.H(obj.input.scheme_parameters.C+1 : obj.input.scheme_parameters.C + obj.input.scheme_parameters.M, obj.input.scheme_parameters.C+1 : obj.input.scheme_parameters.C + obj.input.scheme_parameters.M) = ...
                  obj.footstep_weight * eye(obj.input.scheme_parameters.M, obj.input.scheme_parameters.M);
             
-            index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
+            obj.index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
             
             % x component           
             obj.b_stab_constr = state.x(1,1) + state.x(2,1) / obj.input.scheme_parameters.eta ...
@@ -112,7 +112,7 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
                     -  obj.zmp_weight * obj.input.footstep_plan.zmp_centerline_x;
                
                 
-            if index <= obj.input.footstep_plan.ds_samples 
+            if obj.index <= obj.input.footstep_plan.ds_samples 
                obj.A_ineq = obj.A_zmp_constr;
                obj.b_ineq = obj.b_zmp_constr; 
                obj.b_eq_ds(1,1) = obj.b_stab_constr;
@@ -168,7 +168,7 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
             obj.f(1 : obj.input.scheme_parameters.C, 1) = ...                   
                     -  obj.zmp_weight * obj.input.footstep_plan.zmp_centerline_y;                
                 
-             if index <= obj.input.footstep_plan.ds_samples 
+             if obj.index <= obj.input.footstep_plan.ds_samples 
                obj.A_ineq = obj.A_zmp_constr;
                obj.b_ineq = obj.b_zmp_constr;
                obj.b_eq_ds(1,1) = obj.b_stab_constr;
@@ -189,15 +189,17 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
             ftstp(3,1) = 0;
             ftstp
             state.sf_pos_ss
-            index 
+            obj.index 
         end
         
         function result = getFeasibilityRegion(obj)
             result = 0;
+            
         end
         
         function obj = computeFeasibilityRegion(obj, state, input)
             result = 0;
+            % put also here the computation!!!
         end
         
     end
@@ -244,6 +246,7 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
         sf_sign;
         footstep_weight;
         zmp_weight;
+        index;
                    
     end
     

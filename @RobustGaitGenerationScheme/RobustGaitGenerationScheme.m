@@ -8,6 +8,7 @@ classdef RobustGaitGenerationScheme < handle
             obj.input = input;
             obj.sm_instance = StandardMode(obj.input);
             obj.rm_instance = RecoveryMode(obj.input);
+            obj.rm_feasibility_processing = NonConvexAndSTA(obj.input);
             obj.dob_instance = DisturbanceObserver(obj.input, state);
             
             obj.steps_in_horizon = zeros(obj.input.scheme_parameters.F + 2, 2);   
@@ -63,26 +64,16 @@ classdef RobustGaitGenerationScheme < handle
              end
              
              if state.world_time_iter == round(obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta)
-
                  
                 state.step_time_iter = 1;
-               % state.footstep_counter = state.footstep_counter + 1;
-               % state.footstep_counter_rm = state.footstep_counter + 1;
-                %state.sf_pos
-                %if state.current_sf == "right"
-                %   state.current_sf = "left"; 
-                %else
-                %   state.current_sf = "right"; 
-                %end                
+              
                 state.sf_pos = state.next_sf_pos; 
                 state.sf_pos_ss = state.next_sf_pos;
                 state.footstep_counter = state.footstep_counter + 1;
                 state.footstep_counter_sm = state.footstep_counter + 1;
                 
                 difference = obj.input.footstep_plan.positions(state.footstep_counter + 1, :) - state.sf_pos_ss';  
-                if abs(difference(1)) ~= 0 
-                   1 
-                end
+                
                 obj.input.footstep_plan.positions(state.footstep_counter + 1, :) = state.sf_pos';
                 obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 1) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 1) - difference(1);
                 obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 2) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 2) - difference(2);
@@ -126,7 +117,11 @@ classdef RobustGaitGenerationScheme < handle
                  obj.feasibility_region = obj.sm_instance.getFeasibilityRegion();
                  state.feasibility_region = obj.feasibility_region;
              else
-                 [obj.u, obj.ftstp] = obj.rm_instance.solve(state, obj.input);                
+
+                 [obj.u, obj.ftstp] = obj.rm_instance.solve(state, obj.input);  
+                 obj.rm_feasibility_processing.computeFeasibilityRegion(state, obj.input);
+                 state.feasibility_region = obj.rm_feasibility_processing.getFeasibilityRegion();
+                 
              end
              
              % integrate LIP
@@ -260,6 +255,7 @@ classdef RobustGaitGenerationScheme < handle
         input;
         sm_instance;
         rm_instance;
+        rm_feasibility_processing;
         dob_instance;
         restriction_builder;
         

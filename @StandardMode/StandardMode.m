@@ -72,8 +72,8 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             u(2,1) = solution(1);
             
             % next footstep is given by the plan
-            index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
-            if index <= obj.input.footstep_plan.ds_samples 
+            obj.index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
+            if obj.index <= obj.input.footstep_plan.ds_samples 
                 ftstp = obj.input.footstep_plan.positions(state.footstep_counter + 1, 1:3)';
             else
                 ftstp = obj.input.footstep_plan.positions(state.footstep_counter + 2, 1:3)';
@@ -159,6 +159,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
         restriction_x;
         restriction_y;
         restriction_builder;
+        index;
         
     end
     

@@ -23,6 +23,7 @@ classdef Plotter < handle
             
             obj.logs = logs;
             obj.figure_handle = figure(1);
+            clf;
             hold on;
             grid on;
             com = plot(logs.x_store(1, 1:state.world_time_iter - 1), logs.y_store(1, 1:state.world_time_iter - 1), 'r', 'Linewidth', 2);

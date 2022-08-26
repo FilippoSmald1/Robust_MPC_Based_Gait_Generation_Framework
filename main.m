@@ -210,7 +210,7 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     if sim_iter == 3
         plotter.plotLogs(logs, state);
     end
-    if mod(sim_iter, 50) == 0
+    if mod(sim_iter, 15) == 0
         plotter.plotLogs(logs, state);
     end
     

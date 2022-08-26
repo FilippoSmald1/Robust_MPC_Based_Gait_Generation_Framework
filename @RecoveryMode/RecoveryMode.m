@@ -65,9 +65,7 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
 
             obj.A_ineq = [obj.A_zmp_constr; obj.A_kinematic_constr];
             obj.b_ineq = [obj.b_zmp_constr; obj.b_kinematic_constr]; 
-            
-
-            
+                       
         end
         
         function [u, ftstp] = solve(obj, state, input)
@@ -187,9 +185,11 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
             u(2,1) = solution(1);
             ftstp(2,1) = solution(obj.input.scheme_parameters.C + 1,1);
             ftstp(3,1) = 0;
+            
             ftstp
             state.sf_pos_ss
             obj.index 
+            
         end
         
         function result = getFeasibilityRegion(obj)

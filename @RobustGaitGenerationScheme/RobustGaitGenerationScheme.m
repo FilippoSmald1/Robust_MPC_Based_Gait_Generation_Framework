@@ -109,8 +109,7 @@ classdef RobustGaitGenerationScheme < handle
                
              % maybe STA (?) 
                % recovery mode . STA
-    
-               
+                   
              % control cycle
              if obj.mode == 'standard_mode'
                  [obj.u, obj.ftstp] = obj.sm_instance.solve(state, obj.input);
@@ -126,20 +125,16 @@ classdef RobustGaitGenerationScheme < handle
              
              % integrate LIP
              state = obj.integrateModel(state, obj.u);
-             
-             
+                          
              state.next_sf_pos = obj.ftstp;
-             
-             
+                          
              % update counters
              state.world_time_iter = state.world_time_iter + 1;
              state.step_time_iter = state.step_time_iter + 1;
              
              % return updated state structure
-             state_ = state;
-             if mod(state.world_time_iter, 20) == 0
-                stop = true;
-             end            
+             state_ = state; 
+             
         end
         
         function init_state_proposal = proposeFeasibleInitialState(obj, state)

@@ -225,6 +225,7 @@ end
 %% plot the logs
 time = 0 : simulation_parameters.delta : simulation_parameters.sim_time - simulation_parameters.delta;
 figure(2)
+clf
 hold on
 grid on
 plot(logs.feasibility_region(1,:))
@@ -235,12 +236,13 @@ plot(logs.feasibility_region_3(1,:))
 plot(logs.feasibility_region_3(2,:))
 
 figure(3)
+clf
 hold on
 grid on
 plot(logs.feasibility_region(3,:))
 plot(logs.feasibility_region(4,:))
-%plot(logs.feasibility_region_2(3,:))
-%plot(logs.feasibility_region_2(4,:))
+plot(logs.feasibility_region_2(3,:))
+plot(logs.feasibility_region_2(4,:))
 %plot(logs.feasibility_region_3(3,:))
 %plot(logs.feasibility_region_3(4,:))
 

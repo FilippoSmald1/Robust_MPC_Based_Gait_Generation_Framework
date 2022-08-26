@@ -71,20 +71,11 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                if state.footstep_counter > 1
                    1;
                end
-               
-               if state.current_sf == "right" && obj.index <= obj.input.footstep_plan.ds_samples 
+               if state.current_sf == "right"
+                   obj.sf_sign = + 1;
+               else
                    obj.sf_sign = - 1;
                end
-               if state.current_sf == "right" && obj.index > obj.input.footstep_plan.ds_samples 
-                   obj.sf_sign = + 1;
-               end               
-               if state.current_sf == "left" && obj.index <= obj.input.footstep_plan.ds_samples 
-                   obj.sf_sign = + 1;
-               end
-               if state.current_sf == "left" && obj.index > obj.input.footstep_plan.ds_samples 
-                   obj.sf_sign = - 1;
-               end  
-               
                for j = 1 : obj.M
 
                    if j == 1
@@ -99,14 +90,14 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                        
                        % alternate pm sign for y
 
-                       obj.kinematic_buffer_y_m = obj.kinematic_buffer_y_m + obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4);
-                       obj.kinematic_buffer_y_M = obj.kinematic_buffer_y_M - obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4);
+                       obj.kinematic_buffer_y_m = obj.kinematic_buffer_x_m + obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4);
+                       obj.kinematic_buffer_y_M = obj.kinematic_buffer_x_M - obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4);
                        
-                       obj.kinematic_and_temporal_buffer_y_m = obj.kinematic_and_temporal_buffer_y_m + ( + obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4)) * ...
+                       obj.kinematic_and_temporal_buffer_y_m = obj.kinematic_and_temporal_buffer_x_m + ( + obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4)) * ...
                                                                (1 - obj.lambda_j(j, 1) ^ obj.ni_j(j, 1)) / (obj.ni_j(j, 1) * log(obj.lambda_j(j, 1)));
-                       obj.kinematic_and_temporal_buffer_y_M = obj.kinematic_and_temporal_buffer_y_M + ( - obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4)) * ...
+                       obj.kinematic_and_temporal_buffer_y_M = obj.kinematic_and_temporal_buffer_x_M + ( - obj.input.kar.subregion_parameters(i, 3) / 2 - obj.sf_sign * obj.input.kar.subregion_parameters(i, 4)) * ...
                                                                (1 - obj.lambda_j(j, 1) ^ obj.ni_j(j, 1)) / (obj.ni_j(j, 1) * log(obj.lambda_j(j, 1)));
-                       obj.sf_sign = - obj.sf_sign;
+                       
                                                            
                    else
                        
@@ -118,15 +109,21 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                        obj.kinematic_and_temporal_buffer_x_M = obj.kinematic_and_temporal_buffer_x_M + ( - obj.input.kar.subregion_parameters(i, 1) / 2) * ...
                                                                (1 - obj.lambda_j(j, 1) ^ obj.ni_j(j, 1)) * prod(obj.lambda_j(1 : j - 1, 1)) / (obj.ni_j(j, 1) * log(obj.lambda_j(j, 1)));                       
                        
-                       obj.kinematic_buffer_y_m = obj.kinematic_buffer_y_m + obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent;
-                       obj.kinematic_buffer_y_M = obj.kinematic_buffer_y_M - obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent;
+                       % alternate pm sign for y
+%                        if state.current_sf == "right"
+%                            obj.sf_sign = + 1;
+%                        else
+%                            obj.sf_sign = - 1;
+%                        end
+                       obj.kinematic_buffer_y_m = obj.kinematic_buffer_x_m + obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent;
+                       obj.kinematic_buffer_y_M = obj.kinematic_buffer_x_M - obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent;
                        
-                       obj.kinematic_and_temporal_buffer_y_m = obj.kinematic_and_temporal_buffer_y_m + ( + obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent) * ...
-                                                               (1 - obj.lambda_j(j, 1) ^ obj.ni_j(j, 1)) * prod(obj.lambda_j(1 : j - 1, 1)) / (obj.ni_j(j, 1) * log(obj.lambda_j(j, 1)));
-                       obj.kinematic_and_temporal_buffer_y_M = obj.kinematic_and_temporal_buffer_y_M + ( - obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent) * ...
-                                                               (1 - obj.lambda_j(j, 1) ^ obj.ni_j(j, 1)) * prod(obj.lambda_j(1 : j - 1, 1)) / (obj.ni_j(j, 1) * log(obj.lambda_j(j, 1)));                                                         
+                       obj.kinematic_and_temporal_buffer_y_m = obj.kinematic_and_temporal_buffer_x_m + ( + obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent) * ...
+                                                               (1 - obj.lambda_j(j, 1) ^ obj.ni_j(j, 1)) / (obj.ni_j(j, 1) * log(obj.lambda_j(j, 1)));
+                       obj.kinematic_and_temporal_buffer_y_M = obj.kinematic_and_temporal_buffer_x_M + ( - obj.input.scheme_parameters.d_ay_subsequent / 2 - obj.sf_sign * obj.input.scheme_parameters.ell_y_subsequent) * ...
+                                                               (1 - obj.lambda_j(j, 1) ^ obj.ni_j(j, 1)) / (obj.ni_j(j, 1) * log(obj.lambda_j(j, 1)));
+                                                           
                        obj.sf_sign = - obj.sf_sign;
-                       
                    end
                    
                end

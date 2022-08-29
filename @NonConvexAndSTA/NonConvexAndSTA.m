@@ -5,7 +5,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
         function obj = NonConvexAndSTA(input)
             
             obj.input = input;
-            obj.feasibility_region = zeros(4, input.kar.number_of_subregions);
+            obj.feasibility_region = zeros(8, input.kar.number_of_subregions);
             obj.feasibility_region_linear_estimate = zeros(4, 1);
             obj.centerline_multiplier = obj.input.scheme_parameters.eta * obj.input.scheme_parameters.delta * ...
                                         exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.delta * (0 : obj.input.scheme_parameters.C - 1));
@@ -20,14 +20,14 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             obj.lambda_j = zeros(obj.M, 1);
             obj.ni_j = zeros(obj.M, 1);
             obj.linear_feasibility_region = struct;
-            obj.linear_feasibility_region.a_x_lb = 0;
-            obj.linear_feasibility_region.b_x_lb = 0;
-            obj.linear_feasibility_region.a_x_ub = 0;
-            obj.linear_feasibility_region.b_x_ub = 0;
-            obj.linear_feasibility_region.a_y_lb = 0;
-            obj.linear_feasibility_region.b_y_lb = 0;
-            obj.linear_feasibility_region.a_y_ub = 0;
-            obj.linear_feasibility_region.b_y_ub = 0;
+            obj.linear_feasibility_region.a_x_m = 0;
+            obj.linear_feasibility_region.b_x_m = 0;
+            obj.linear_feasibility_region.a_x_M = 0;
+            obj.linear_feasibility_region.b_x_M = 0;
+            obj.linear_feasibility_region.a_y_m = 0;
+            obj.linear_feasibility_region.b_y_m = 0;
+            obj.linear_feasibility_region.a_y_M = 0;
+            obj.linear_feasibility_region.b_y_M = 0;
             
         end
         
@@ -36,7 +36,9 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
         end
         
         function result = getFeasibilityRegion(obj)
+            
             result = obj.feasibility_region;
+            
         end
         
         function obj = computeFeasibilityRegion(obj, state, input)
@@ -63,6 +65,10 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                x_u_M = 0;
                y_u_m = 0;
                y_u_M = 0;
+               x_u_m_bar = 0;
+               x_u_M_bar = 0;
+               y_u_m_bar = 0;
+               y_u_M_bar = 0;               
                
                obj.kinematic_buffer_x_m = 0;
                obj.kinematic_and_temporal_buffer_x_m = 0;
@@ -171,14 +177,86 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                    obj.mean = exp( - obj.eta * obj.T_ss_0) - (exp( - obj.eta * obj.T_ss_0) - exp( - obj.eta * obj.T_s_0)) / 2;
                    
                    if (obj.x_f_0 - obj.x_f_minus_one) >= 0
-                       
+                                           
+                       obj.linear_feasibility_region.a_x_m = obj.kinematic_and_temporal_buffer_x_m + ( (obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * ( 1 / obj.mean ) + ...
+                                                              (obj.x_f_minus_one - obj.x_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);
+                       obj.linear_feasibility_region.b_x_m = + (obj.x_f_0 - obj.x_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              - obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.x_f_minus_one + (obj.kinematic_buffer_x_m) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.x_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_x + ( (obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0) )*( log(obj.mean) ) ...
+                                                              - ((obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0));
+                                                          
+                       obj.linear_feasibility_region.a_x_M = obj.kinematic_and_temporal_buffer_x_M + ( (obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * (log( exp( - obj.eta * obj.T_ss_0)) ...
+                                                             - log(exp(- obj.eta * obj.T_s_0))) / (exp( - obj.eta * obj.T_ss_0 ) - exp( - obj.eta * obj.T_s_0 )) ...
+                                                             + (obj.x_f_minus_one - obj.x_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);                                                                                                                 
+                       obj.linear_feasibility_region.b_x_M = + (obj.x_f_0 - obj.x_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              + obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.x_f_minus_one + (obj.kinematic_buffer_x_M) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.x_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_x + ( (obj.x_f_0 - obj.x_f_minus_one) / (obj.eta * obj.T_ds_0) )*(log( exp( - obj.eta * obj.T_s_0 ))) ...
+                                                              - ((obj.x_f_0 - obj.x_f_minus_one) / (obj.eta * obj.T_ds_0)) * (log(exp(-obj.eta * obj.T_ss_0)) - log(exp(-obj.eta * obj.T_s_0))) ...
+                                                              / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0);
+                                                                                                                          
                    else
+
+                       obj.linear_feasibility_region.a_x_m = obj.kinematic_and_temporal_buffer_x_m + ( (obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * (log( exp( - obj.eta * obj.T_ss_0)) ...
+                                                             - log(exp(- obj.eta * obj.T_s_0))) / (exp( - obj.eta * obj.T_ss_0 ) - exp( - obj.eta * obj.T_s_0 )) ...
+                                                             + (obj.x_f_minus_one - obj.x_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);                                                                                                                 
+                       obj.linear_feasibility_region.b_x_m = + (obj.x_f_0 - obj.x_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              - obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.x_f_minus_one + (obj.kinematic_buffer_x_m) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.x_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_x + ( (obj.x_f_0 - obj.x_f_minus_one) / (obj.eta * obj.T_ds_0) )*(log( exp( - obj.eta * obj.T_s_0 ))) ...
+                                                              - ((obj.x_f_0 - obj.x_f_minus_one) / (obj.eta * obj.T_ds_0)) * (log(exp(-obj.eta * obj.T_ss_0)) - log(exp(-obj.eta * obj.T_s_0))) ...
+                                                              / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0);                       
                        
+                       obj.linear_feasibility_region.a_x_M = obj.kinematic_and_temporal_buffer_x_M + ( (obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * ( 1 / obj.mean ) + ...
+                                                              (obj.x_f_minus_one - obj.x_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);
+                       obj.linear_feasibility_region.b_x_M = + (obj.x_f_0 - obj.x_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              + obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.x_f_minus_one + (obj.kinematic_buffer_x_M) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.x_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_x + ( (obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0) )*( log(obj.mean) ) ...
+                                                              - ((obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0));
+                                                                                                                                                                                 
                    end
                    
                    if (obj.y_f_0 - obj.y_f_minus_one) >= 0
                        
+                       obj.linear_feasibility_region.a_y_m = obj.kinematic_and_temporal_buffer_y_m + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * ( 1 / obj.mean ) + ...
+                                                              (obj.y_f_minus_one - obj.y_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);
+                       obj.linear_feasibility_region.b_y_m = + (obj.y_f_0 - obj.y_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              - obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.y_f_minus_one + (obj.kinematic_buffer_y_m) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) )*( log(obj.mean) ) ...
+                                                              - ((obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0));
+                                                          
+                       obj.linear_feasibility_region.a_y_M = obj.kinematic_and_temporal_buffer_y_M + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * (log( exp( - obj.eta * obj.T_ss_0)) ...
+                                                             - log(exp(- obj.eta * obj.T_s_0))) / (exp( - obj.eta * obj.T_ss_0 ) - exp( - obj.eta * obj.T_s_0 )) ...
+                                                             + (obj.y_f_minus_one - obj.y_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);                                                                                                                 
+                       obj.linear_feasibility_region.b_y_M = + (obj.y_f_0 - obj.y_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              + obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.y_f_minus_one + (obj.kinematic_buffer_y_M) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0) )*(log( exp( - obj.eta * obj.T_s_0 ))) ...
+                                                              - ((obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0)) * (log(exp(-obj.eta * obj.T_ss_0)) - log(exp(-obj.eta * obj.T_s_0))) ...
+                                                              / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0);
+                       
                    else
+                       
+                       obj.linear_feasibility_region.a_y_m = obj.kinematic_and_temporal_buffer_y_m + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * (log( exp( - obj.eta * obj.T_ss_0)) ...
+                                                             - log(exp(- obj.eta * obj.T_s_0))) / (exp( - obj.eta * obj.T_ss_0 ) - exp( - obj.eta * obj.T_s_0 )) ...
+                                                             + (obj.y_f_minus_one - obj.y_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);                                                                                                                 
+                       obj.linear_feasibility_region.b_y_m = + (obj.y_f_0 - obj.y_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              - obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.y_f_minus_one + (obj.kinematic_buffer_y_m) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0) )*(log( exp( - obj.eta * obj.T_s_0 ))) ...
+                                                              - ((obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0)) * (log(exp(-obj.eta * obj.T_ss_0)) - log(exp(-obj.eta * obj.T_s_0))) ...
+                                                              / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0);                       
+                       
+                       obj.linear_feasibility_region.a_y_M = obj.kinematic_and_temporal_buffer_y_M + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * ( 1 / obj.mean ) + ...
+                                                              (obj.y_f_minus_one - obj.y_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);
+                       obj.linear_feasibility_region.b_y_M = + (obj.y_f_0 - obj.y_f_minus_one) * (1 + obj.eta * obj.T_s_0) / (obj.eta * obj.T_ds_0) ...
+                                                              + obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.y_f_minus_one + (obj.kinematic_buffer_y_M) * exp( - obj.eta * obj.T_p) ...
+                                                              - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
+                                                              + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) )*( log(obj.mean) ) ...
+                                                              - ((obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0));
                        
                    end
                    
@@ -201,18 +279,22 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                            + obj.kinematic_buffer_y_M * exp( - obj.eta * obj.T_p) ...
                            + obj.tail_y;   
                        
-                   obj.linear_feasibility_region.a_x_lb = obj.kinematic_and_temporal_buffer_x_m;
-                   obj.linear_feasibility_region.b_x_lb = (obj.x_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_m * exp( - obj.eta * obj.T_p) + obj.tail_x;
-                   obj.linear_feasibility_region.a_x_ub = obj.kinematic_and_temporal_buffer_x_M;
-                   obj.linear_feasibility_region.b_x_ub = (obj.x_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_M * exp( - obj.eta * obj.T_p) + obj.tail_x;
-                   obj.linear_feasibility_region.a_y_lb = obj.kinematic_and_temporal_buffer_y_m;
-                   obj.linear_feasibility_region.b_y_lb = (obj.y_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_m * exp( - obj.eta * obj.T_p) + obj.tail_y;
-                   obj.linear_feasibility_region.a_y_ub = obj.kinematic_and_temporal_buffer_y_M;
-                   obj.linear_feasibility_region.b_y_ub = (obj.y_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_M * exp( - obj.eta * obj.T_p) + obj.tail_y;
+                   obj.linear_feasibility_region.a_x_m = obj.kinematic_and_temporal_buffer_x_m;
+                   obj.linear_feasibility_region.b_x_m = (obj.x_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_m * exp( - obj.eta * obj.T_p) + obj.tail_x;
+                   obj.linear_feasibility_region.a_x_M = obj.kinematic_and_temporal_buffer_x_M;
+                   obj.linear_feasibility_region.b_x_M = (obj.x_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_M * exp( - obj.eta * obj.T_p) + obj.tail_x;
+                   obj.linear_feasibility_region.a_y_m = obj.kinematic_and_temporal_buffer_y_m;
+                   obj.linear_feasibility_region.b_y_m = (obj.y_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_m * exp( - obj.eta * obj.T_p) + obj.tail_y;
+                   obj.linear_feasibility_region.a_y_M = obj.kinematic_and_temporal_buffer_y_M;
+                   obj.linear_feasibility_region.b_y_M = (obj.y_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_M * exp( - obj.eta * obj.T_p) + obj.tail_y;
 
                end
                
-               obj.feasibility_region(:, i) = [x_u_m; x_u_M; y_u_m; y_u_M];   
+               x_u_m_bar = obj.linear_feasibility_region.a_x_m * obj.Delta_lambda + obj.linear_feasibility_region.b_x_m;
+               x_u_M_bar = obj.linear_feasibility_region.a_x_M * obj.Delta_lambda + obj.linear_feasibility_region.b_x_M;
+               y_u_m_bar = obj.linear_feasibility_region.a_y_m * obj.Delta_lambda + obj.linear_feasibility_region.b_y_m;
+               y_u_M_bar = obj.linear_feasibility_region.a_y_M * obj.Delta_lambda + obj.linear_feasibility_region.b_y_M;
+               obj.feasibility_region(:, i) = [x_u_m; x_u_M; y_u_m; y_u_M; x_u_m_bar; x_u_M_bar; y_u_m_bar; y_u_M_bar];   
                
            end
            

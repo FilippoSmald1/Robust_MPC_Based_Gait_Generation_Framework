@@ -9,7 +9,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.x_u_M = 0;
             obj.y_u_m = 0;
             obj.y_u_M = 0;
-            obj.feasibility_region = [obj.x_u_m; obj.x_u_M; obj.y_u_m; obj.y_u_M];
+            obj.feasibility_region = [obj.x_u_m; obj.x_u_M; obj.y_u_m; obj.y_u_M; 0; 0; 0; 0];
             obj.centerline_multiplier = obj.input.scheme_parameters.eta * obj.input.scheme_parameters.delta * ...
                                         exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.delta * (0 : obj.input.scheme_parameters.C - 1));
             obj.tail_multiplier = obj.input.scheme_parameters.eta * obj.input.scheme_parameters.delta * ...
@@ -96,7 +96,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.y_u_M = obj.centerline_multiplier * (obj.input.footstep_plan.zmp_centerline_y + obj.input.scheme_parameters.d_z/2 - obj.restriction_y) ...
                         + obj.tail_multiplier * obj.input.footstep_plan.tail_y ...
                         - state.w_bar(2,1) / obj.input.scheme_parameters.eta ^ 2;  
-            obj.feasibility_region = [obj.x_u_m; obj.x_u_M; obj.y_u_m; obj.y_u_M];
+            obj.feasibility_region = [obj.x_u_m; obj.x_u_M; obj.y_u_m; obj.y_u_M; 0; 0; 0; 0];
             
             is_feasible = false;
             obj.x_u = state.x(1,1) + state.x(2,1) / obj.input.scheme_parameters.eta;
@@ -122,7 +122,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.y_u_M = obj.centerline_multiplier * (obj.input.footstep_plan.zmp_centerline_y + obj.input.scheme_parameters.d_z/2 - obj.restriction_y) ...
                         + obj.tail_multiplier * obj.input.footstep_plan.tail_y ...
                         - state.w_bar(2,1) / obj.input.scheme_parameters.eta ^ 2;  
-            obj.feasibility_region = [obj.x_u_m; obj.x_u_M; obj.y_u_m; obj.y_u_M];
+            obj.feasibility_region = [obj.x_u_m; obj.x_u_M; obj.y_u_m; obj.y_u_M; 0; 0; 0; 0];
             
         end
         

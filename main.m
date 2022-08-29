@@ -48,11 +48,12 @@ input.scheme_parameters.ell_x_subsequent = 0.0; % kinematic admissible region y 
 input.scheme_parameters.ell_y_subsequent = 0.2; % kinematic admissible region y displacement
 input.scheme_parameters.footstep_weight_in_cost_function = 1000000;
 input.scheme_parameters.zmp_track_in_cost_function = 0.01;
+input.scheme_parameters.v_max = 3;
 
 
 % to handle non-convex constraints
 input.kar = struct;
-input.kar.number_of_subregions = 3;
+input.kar.number_of_subregions = 1;
 input.kar.subregion_parameters = [input.scheme_parameters.d_ax, input.scheme_parameters.ell_x, input.scheme_parameters.d_ay, input.scheme_parameters.ell_y; ...
                                   0.15, 0.175, 0.15, 0.3; ...
                                   0.15, -0.175, 0.15, 0.3];
@@ -204,13 +205,13 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     logs.w_bar(:, simulation_parameters.sim_iter) = wpg.getDisturbance();
     logs.actual_footsteps(:, state.footstep_counter) = state.sf_pos;
     logs.feasibility_region(:, sim_iter) = state.feasibility_region(:, 1);
-    logs.feasibility_region_2(:, sim_iter) = state.feasibility_region(:, 2);
-    logs.feasibility_region_3(:, sim_iter) = state.feasibility_region(:, 3);
+    %logs.feasibility_region_2(:, sim_iter) = state.feasibility_region(:, 2);
+    %logs.feasibility_region_3(:, sim_iter) = state.feasibility_region(:, 3);
 
     if sim_iter == 3
         plotter.plotLogs(logs, state);
     end
-    if mod(sim_iter, 5) == 0
+    if mod(sim_iter, 2) == 0
         plotter.plotLogs(logs, state);
     end
     

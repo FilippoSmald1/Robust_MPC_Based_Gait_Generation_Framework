@@ -28,7 +28,15 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             obj.linear_feasibility_region.b_y_m = 0;
             obj.linear_feasibility_region.a_y_M = 0;
             obj.linear_feasibility_region.b_y_M = 0;
-            
+            obj.H_timing_qp = blkdiag(1, 10000000, 10000000);
+            obj.f_timing_qp = zeros(3, 1);
+            obj.A_timing_qp = zeros(7, 3);
+            obj.b_timing_qp = zeros(7, 1);
+            obj.t_min = 0.2;
+            obj.t_max = 1.5;
+            obj.eps_margin = 0.001;
+            obj.eps_t = 0;
+        
         end
         
         function [u, ftstp] = solve(obj, state, input)
@@ -300,8 +308,51 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
            
         end
 
-        function result = adaptTiming(obj)
-            result = 0;
+        function result = adaptTiming(obj, state)
+            
+            obj.f_timing_qp(1, 1) = - obj.Delta_lambda;
+            
+            obj.A_timing_qp(1, :) = [obj.linear_feasibility_region.a_x_m, -1, 0];
+            obj.b_timing_qp(1, 1) = state.x(1, 1) + state.x(2,1) / obj.eta - obj.linear_feasibility_region.b_x_m - obj.eps_margin;
+            obj.A_timing_qp(2, :) = [-obj.linear_feasibility_region.a_x_M, 1, 0];
+            obj.b_timing_qp(2, 1) = - state.x(1, 1) - state.x(2,1) / obj.eta + obj.linear_feasibility_region.b_x_M - obj.eps_margin;
+            obj.A_timing_qp(3, :) = [obj.linear_feasibility_region.a_y_m, 0, -1];
+            obj.b_timing_qp(3, 1) = state.y(1, 1) + state.y(2,1) / obj.eta - obj.linear_feasibility_region.b_y_m - obj.eps_margin;
+            obj.A_timing_qp(4, :) = [-obj.linear_feasibility_region.a_y_M, 0, 1];
+            obj.b_timing_qp(4, 1) = - state.y(1, 1) - state.y(2,1) / obj.eta + obj.linear_feasibility_region.b_y_M - obj.eps_margin;            
+            
+            obj.A_timing_qp(5, :) = [1, 0, 0];
+            obj.b_timing_qp(5, 1) = exp( - obj.eta * (obj.t_min - obj.input.scheme_parameters.delta * obj.index));
+            obj.A_timing_qp(6, :) = [-1, 0, 0];
+            obj.b_timing_qp(6, 1) = -exp(- obj.eta * (obj.t_max - obj.input.scheme_parameters.delta * obj.index)); 
+            
+            if obj.index <= obj.input.footstep_plan.ds_samples
+                obj.eps_t = obj.T_ss_0 + max( abs(obj.input.footstep_plan.zmp_centerline_x(1,1) - obj.x_f_0), abs(obj.input.footstep_plan.zmp_centerline_y(1,1) - obj.y_f_0) ) / obj.input.scheme_parameters.v_max;
+            else
+                % using the cneterline instead of the swing foot velocity
+                obj.eps_t = max( abs(obj.input.footstep_plan.zmp_centerline_x(1,1) - obj.x_f_0), abs(obj.input.footstep_plan.zmp_centerline_y(1,1) - obj.y_f_0) ) / obj.input.scheme_parameters.v_max;                
+            end
+                
+            obj.A_timing_qp(7, :) = [1, 0, 0];   
+            obj.b_timing_qp(7, 1) = exp( - obj.eta * obj.eps_t);
+            
+            sta = quadprog(obj.H_timing_qp, obj.f_timing_qp, obj.A_timing_qp, obj.b_timing_qp);
+            
+            result = state.world_time_iter;
+            if ~isempty(sta)
+               if abs(sta(1, 1) - obj.Delta_lambda) > 0.0001 
+                   if obj.index <= obj.input.footstep_plan.ds_samples
+                       if obj.input.footstep_plan.ds_samples - obj.index > 6
+                           result = round((obj.input.footstep_plan.timings(state.footstep_counter, 1) + log(1 / sta(1, 1)) / obj.eta) / obj.input.scheme_parameters.delta);    
+                       end
+                   else
+                       if round( obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta ) - state.world_time_iter > 6
+                           result = round((obj.input.footstep_plan.timings(state.footstep_counter, 1) + log(1 / sta(1, 1)) / obj.eta) / obj.input.scheme_parameters.delta);    
+                       end                   
+                   end
+               end     
+            end
+                      
         end
 
         function result = selectKinematicConstraint(obj)
@@ -309,7 +360,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
         end
         
     end
-    
+
     properties (Access = private)
       
         input;
@@ -345,7 +396,15 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
         kinematic_and_temporal_buffer_y_M;  
         sf_sign;
         mean;
-        linear_feasibility_region;         
+        linear_feasibility_region;  
+        H_timing_qp;
+        f_timing_qp;
+        A_timing_qp;
+        b_timing_qp;
+        t_min;
+        t_max;
+        eps_margin;
+        eps_t;
         
     end
             

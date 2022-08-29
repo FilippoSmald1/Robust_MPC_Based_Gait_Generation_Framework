@@ -116,11 +116,12 @@ classdef RobustGaitGenerationScheme < handle
                  obj.feasibility_region = obj.sm_instance.getFeasibilityRegion();
                  state.feasibility_region = obj.feasibility_region;
              else
-
-                 [obj.u, obj.ftstp] = obj.rm_instance.solve(state, obj.input);  
                  obj.rm_feasibility_processing.computeFeasibilityRegion(state, obj.input);
-                 state.feasibility_region = obj.rm_feasibility_processing.getFeasibilityRegion();
-                 
+                 if state.footstep_counter > 1 
+                     obj.rm_feasibility_processing.adaptTiming(state);
+                 end
+                 [obj.u, obj.ftstp] = obj.rm_instance.solve(state, obj.input);                   
+                 state.feasibility_region = obj.rm_feasibility_processing.getFeasibilityRegion();                
              end
              
              % integrate LIP

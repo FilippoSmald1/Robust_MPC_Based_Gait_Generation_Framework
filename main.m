@@ -29,8 +29,8 @@ input.scheme_parameters.C = floor(input.scheme_parameters.T_c / input.scheme_par
 input.scheme_parameters.P = floor(input.scheme_parameters.T_p / input.scheme_parameters.delta);
 input.scheme_parameters.M = 2; % optimized footstep
 input.scheme_parameters.F = 4; % available footstep from the plan at each time
-input.scheme_parameters.midrange = [0.0; 0.0]; % (w_mx, w_my) in m/s^2
-input.scheme_parameters.dist_range = [0.03; 0.03];  % (Deltaw_mx, Deltaw_my) in m/s^2
+input.scheme_parameters.midrange = [0.15; 0.15]; % (w_mx, w_my) in m/s^2
+input.scheme_parameters.dist_range = [0.15; 0.15];  % (Deltaw_mx, Deltaw_my) in m/s^2
 input.scheme_parameters.alpha = 0.25;
 input.scheme_parameters.mi_max = 0.000025;
 input.scheme_parameters.gamma_max = 0.00099;
@@ -46,7 +46,7 @@ input.scheme_parameters.d_ay_subsequent = 0.25; % kinematic admissible region y 
 input.scheme_parameters.ell_subsequent = 0.2; % kinematic admissible region y displacement
 input.scheme_parameters.ell_x_subsequent = 0.0; % kinematic admissible region y displacement
 input.scheme_parameters.ell_y_subsequent = 0.2; % kinematic admissible region y displacement
-input.scheme_parameters.footstep_weight_in_cost_function = 1000000;
+input.scheme_parameters.footstep_weight_in_cost_function = 10; % 10 %1000000;
 input.scheme_parameters.zmp_track_in_cost_function = 0.01;
 input.scheme_parameters.v_max = 3;
 
@@ -193,12 +193,11 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     simulation_parameters.sim_iter = sim_iter;
 
     % get measurement (simulate pertuebations)
-    
+    state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/3)) ;
+    state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/5)) ;    
     if sim_iter >= 230 && sim_iter < 240
-        %state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/3)) ;
-        %state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/5)) ;
-        state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 3 ;
-        state.y(2, 1) = state.y(2, 1) - input.scheme_parameters.delta * 3 ;        
+        state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2.8 ;
+        state.y(2, 1) = state.y(2, 1) - input.scheme_parameters.delta * 2.8 ;        
     end
     
     % solve step of gait generation algorithm
@@ -217,7 +216,7 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     if sim_iter == 3
         plotter.plotLogs(logs, state);
     end
-    if mod(sim_iter, 15) == 0
+    if mod(sim_iter, 1) == 0
         plotter.plotLogs(logs, state);
     end
     

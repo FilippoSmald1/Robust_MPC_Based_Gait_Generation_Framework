@@ -38,6 +38,7 @@ classdef RobustGaitGenerationScheme < handle
             obj.mode = 'standard_mode';
             obj.obstacles_are_present = false;
             obj.feasibility_region = [0; 0; 0; 0];
+            obj.new_timings = obj.input.footstep_plan.timings;
             
         end
 
@@ -61,6 +62,8 @@ classdef RobustGaitGenerationScheme < handle
 
                 %obj.input.footstep_plan.positions(state.footstep_counter, :) = state.sf_pos';
                 
+                obj.mode = 'standard_mode';
+                
              end
              
              if state.world_time_iter == round(obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta)
@@ -72,12 +75,16 @@ classdef RobustGaitGenerationScheme < handle
                 state.footstep_counter = state.footstep_counter + 1;
                 state.footstep_counter_sm = state.footstep_counter + 1;
                 
+                obj.new_timings(state.footstep_counter, 1) = state.sim_iter;
+                
                 difference = obj.input.footstep_plan.positions(state.footstep_counter + 1, :) - state.sf_pos_ss';  
                 
                 obj.input.footstep_plan.positions(state.footstep_counter + 1, :) = state.sf_pos';
                 obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 1) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 1) - difference(1);
                 obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 2) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 2) - difference(2);
                 obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) - difference(3);                 
+               
+                obj.mode = 'standard_mode';
                 
              end
             
@@ -100,12 +107,12 @@ classdef RobustGaitGenerationScheme < handle
              
              % feasibility check (only if cleared by the obstacle
              % detection)
-             if obj.sm_instance.feasibilityCheck(state, obj.input) && ~obj.obstacles_are_present
+             if obj.sm_instance.feasibilityCheck(state, obj.input) && ~obj.obstacles_are_present && strcmp(obj.mode, 'standard_mode') 
                 obj.mode = 'standard_mode'; 
              else
                 obj.mode = 'recovery_mode'; 
              end
-             obj.mode = 'recovery_mode';
+             %obj.mode = 'recovery_mode';
                
              % maybe STA (?) 
                % recovery mode . STA
@@ -121,7 +128,7 @@ classdef RobustGaitGenerationScheme < handle
                      state.world_time_iter = output;
                  end                
                  [obj.u, obj.ftstp] = obj.rm_instance.solve(state, obj.input);                   
-                 state.feasibility_region = obj.rm_feasibility_processing.getFeasibilityRegion();                
+                 state.feasibility_region = obj.rm_feasibility_processing.getFeasibilityRegion(); 
              end
              
              % integrate LIP
@@ -135,6 +142,9 @@ classdef RobustGaitGenerationScheme < handle
              
              % return updated state structure
              state_ = state; 
+             
+             obj.ftstp
+             state.step_time_iter
              
         end
         
@@ -229,7 +239,13 @@ classdef RobustGaitGenerationScheme < handle
 
             data = obj.input;
 
-        end          
+        end     
+        
+        function timings = getNewTimings(obj)
+            
+            timings = obj.new_timings
+            
+        end
 
     end
     
@@ -263,8 +279,7 @@ classdef RobustGaitGenerationScheme < handle
         D_upd;
         mode;
         feasibility_region;
-        obstacles_are_present;
-
+        obstacles_are_present;       
         
         % buffers
         steps_in_horizon;
@@ -274,6 +289,7 @@ classdef RobustGaitGenerationScheme < handle
         centerline_temp_temp_y;      
         ss_samples;
         mapping_buffer;
+        new_timings;
         
     end
     

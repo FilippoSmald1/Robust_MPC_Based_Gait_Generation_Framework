@@ -197,16 +197,6 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
             ftstp(3,1) = 0;
             obj.previous_ftstp = ftstp; 
             
-            ftstp
-            disp('world time iter')
-            state.world_time_iter
-            disp('index')
-            obj.index
-            
-            if state.footstep_counter >= 3
-            1;    
-            end
-            
         end
         
         function result = getFeasibilityRegion(obj)

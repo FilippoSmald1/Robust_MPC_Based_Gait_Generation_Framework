@@ -75,9 +75,9 @@ classdef RobustGaitGenerationScheme < handle
                 difference = obj.input.footstep_plan.positions(state.footstep_counter + 1, :) - state.sf_pos_ss';  
                 
                 obj.input.footstep_plan.positions(state.footstep_counter + 1, :) = state.sf_pos';
-                obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 1) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 1) - difference(1);
-                obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 2) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 2) - difference(2);
-                obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) - difference(3);                 
+                obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 1) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 1) - difference(1);
+                obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 2) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 2) - difference(2);
+                obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 3) = obj.input.footstep_plan.positions(state.footstep_counter + 1 : end, 3) - difference(3);                 
                 
              end
             
@@ -116,7 +116,8 @@ classdef RobustGaitGenerationScheme < handle
                  obj.feasibility_region = obj.sm_instance.getFeasibilityRegion();
                  state.feasibility_region = obj.feasibility_region;
              else
-                 output = obj.rm_feasibility_processing.solve(state, obj.input);               
+                 output = obj.rm_feasibility_processing.solve(state, obj.input);
+                 obj.rm_feasibility_processing.computeFeasibilityRegion(state, ob
                  if state.footstep_counter > 1 
                      state.world_time_iter = output;
                  end                

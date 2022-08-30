@@ -121,11 +121,6 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
                obj.b_ineq = [obj.b_zmp_constr; obj.b_kinematic_constr];                
                obj.A_eq_ss = obj.A_stab_constr;   
                obj.b_eq_ss = obj.b_stab_constr;
-%                if round( obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta ) - state.world_time_iter <= 2 
-%                   obj.A_eq_ss = [obj.A_eq_ss; zeros(1, obj.input.scheme_parameters.C + obj.input.scheme_parameters.M)];   
-%                   obj.A_eq_ss(2, obj.input.scheme_parameters.C + 1) = 1;
-%                   obj.b_eq_ss = [obj.b_eq_ss; obj.previous_ftstp(1, 1)];                   
-%                end               
                solution = quadprog(obj.H, obj.f, obj.A_ineq, obj.b_ineq, obj.A_eq_ss, obj.b_eq_ss);                
             end
             if isempty(solution)
@@ -182,11 +177,6 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
                obj.b_ineq = [obj.b_zmp_constr; obj.b_kinematic_constr];                 
                obj.A_eq_ss = obj.A_stab_constr;   
                obj.b_eq_ss = obj.b_stab_constr;
-%                if round( obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta ) - state.world_time_iter <= 1  
-%                   obj.A_eq_ss = [obj.A_eq_ss; zeros(1, obj.input.scheme_parameters.C + obj.input.scheme_parameters.M)];   
-%                   obj.A_eq_ss(2, obj.input.scheme_parameters.C + 1) = 1;
-%                   obj.b_eq_ss = [obj.b_eq_ss; obj.previous_ftstp(2, 1)];                   
-%                end
                solution = quadprog(obj.H, obj.f, obj.A_ineq, obj.b_ineq, obj.A_eq_ss, obj.b_eq_ss);                
              end
             if isempty(solution)
@@ -195,7 +185,7 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
             u(2,1) = solution(1);
             ftstp(2,1) = solution(obj.input.scheme_parameters.C + 1,1);
             ftstp(3,1) = 0;
-            obj.previous_ftstp = ftstp; 
+            previous_ftstp = 
             
             ftstp
             disp('world time iter')

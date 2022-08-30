@@ -53,10 +53,10 @@ input.scheme_parameters.v_max = 3;
 
 % to handle non-convex constraints
 input.kar = struct;
-input.kar.number_of_subregions = 1;
+input.kar.number_of_subregions = 3;
 input.kar.subregion_parameters = [input.scheme_parameters.d_ax, input.scheme_parameters.ell_x, input.scheme_parameters.d_ay, input.scheme_parameters.ell_y; ...
-                                  0.15, 0.175, 0.15, 0.3; ...
-                                  0.15, -0.175, 0.15, 0.3];
+                                  0.15, 0.175, 0.12, 0.015; ...
+                                  0.15, -0.175, 0.12, 0.015];
 
 
 
@@ -124,7 +124,7 @@ disp(input.footstep_plan.timings)
 %% simulation parameters
 simulation_parameters = struct;
 simulation_parameters.delta = input.scheme_parameters.delta; %TODO: enable different operating frequencies
-simulation_parameters.sim_time = 3;
+simulation_parameters.sim_time = 5;
 simulation_parameters.sim_iter = 1;
 
 
@@ -145,6 +145,7 @@ state.footstep_counter_rm = state.footstep_counter + 1;
 state.footstep_counter_sm = state.footstep_counter;
 state.step_time_iter = 1;
 state.world_time_iter = 1;
+state.sim_iter = 1;
 
 
 %% log data
@@ -192,12 +193,17 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     simulation_parameters.sim_iter = sim_iter;
 
     % get measurement (simulate pertuebations)
-    %state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/3)) ;
-    %state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/5)) ;
+    
+    if sim_iter >= 230 && sim_iter < 240
+        %state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/3)) ;
+        %state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/5)) ;
+        state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 3 ;
+        state.y(2, 1) = state.y(2, 1) - input.scheme_parameters.delta * 3 ;        
+    end
     
     % solve step of gait generation algorithm
     state = wpg.update(state);
-
+    state.sim_iter = sim_iter;
 
     % store logs
     logs.x_store(:, sim_iter) = state.x;
@@ -205,13 +211,13 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     logs.w_bar(:, simulation_parameters.sim_iter) = wpg.getDisturbance();
     logs.actual_footsteps(:, state.footstep_counter) = state.sf_pos;
     logs.feasibility_region(:, sim_iter) = state.feasibility_region(:, 1);
-    %logs.feasibility_region_2(:, sim_iter) = state.feasibility_region(:, 2);
-    %logs.feasibility_region_3(:, sim_iter) = state.feasibility_region(:, 3);
+    logs.feasibility_region_2(:, sim_iter) = state.feasibility_region(:, 2);
+    logs.feasibility_region_3(:, sim_iter) = state.feasibility_region(:, 3);
 
     if sim_iter == 3
         plotter.plotLogs(logs, state);
     end
-    if mod(sim_iter, 2) == 0
+    if mod(sim_iter, 15) == 0
         plotter.plotLogs(logs, state);
     end
     
@@ -229,21 +235,27 @@ figure(2)
 clf
 hold on
 grid on
-plot(logs.feasibility_region(1,:))
-plot(logs.feasibility_region(2,:))
-plot(logs.feasibility_region(5,:))
-plot(logs.feasibility_region(6,:))
+plot(logs.feasibility_region(1,:), 'r', 'Linewidth', 2)
+plot(logs.feasibility_region(2,:), 'r', 'Linewidth', 2)
+plot(logs.feasibility_region_2(1,:), 'b')
+plot(logs.feasibility_region_2(2,:), 'b')
+plot(logs.feasibility_region_3(1,:), 'g')
+plot(logs.feasibility_region_3(2,:), 'g')
+% plot(logs.feasibility_region(5,:))
+% plot(logs.feasibility_region(6,:))
 
 figure(3)
 clf
 hold on
 grid on
-plot(logs.feasibility_region(3,:))
-plot(logs.feasibility_region(4,:))
-plot(logs.feasibility_region(7,:))
-plot(logs.feasibility_region(8,:))
-%plot(logs.feasibility_region_3(3,:))
-%plot(logs.feasibility_region_3(4,:))
+plot(logs.feasibility_region(3,:), 'r', 'Linewidth', 2)
+plot(logs.feasibility_region(4,:), 'r', 'Linewidth', 2)
+%plot(logs.feasibility_region(7,:))
+%plot(logs.feasibility_region(8,:))
+plot(logs.feasibility_region_2(3,:), 'b')
+plot(logs.feasibility_region_2(4,:), 'b')
+plot(logs.feasibility_region_3(3,:), 'g')
+plot(logs.feasibility_region_3(4,:), 'g')
 
 %{
 f = figure(1);

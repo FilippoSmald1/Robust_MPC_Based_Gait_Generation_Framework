@@ -123,10 +123,14 @@ classdef RobustGaitGenerationScheme < handle
                  obj.feasibility_region = obj.sm_instance.getFeasibilityRegion();
                  state.feasibility_region = obj.feasibility_region;
              else
-                 output = obj.rm_feasibility_processing.solve(state, obj.input);               
+                 [output, kin_constr] = obj.rm_feasibility_processing.solve(state, obj.input);               
                  if state.footstep_counter > 1 
                      state.world_time_iter = output;
                  end                
+                 obj.input.scheme_parameters.d_ax = kin_constr(1, 1);    
+                 obj.input.scheme_parameters.ell_x = kin_constr(1, 2); 
+                 obj.input.scheme_parameters.d_ay = kin_constr(1, 3);
+                 obj.input.scheme_parameters.ell_y = kin_constr(1, 4);  
                  [obj.u, obj.ftstp] = obj.rm_instance.solve(state, obj.input);                   
                  state.feasibility_region = obj.rm_feasibility_processing.getFeasibilityRegion(); 
              end
@@ -241,7 +245,11 @@ classdef RobustGaitGenerationScheme < handle
 
         end     
         
-        function
+        function timings = getNewTimings(obj)
+            
+            timings = obj.new_timings
+            
+        end
 
     end
     

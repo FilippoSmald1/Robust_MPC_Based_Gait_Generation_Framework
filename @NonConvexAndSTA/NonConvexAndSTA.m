@@ -37,19 +37,20 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             obj.eps_margin = 0.01;
             obj.eps_t = 0;
             obj.total_time_modification = 0;
-            
-        
+                    
         end
         
-        function result = solve(obj, state, input)
+        function [result, kin_constr] = solve(obj, state, input)
 
             obj.index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
-
+            obj.input = input;
+            
             if obj.index <= 1
                 obj.total_time_modification
                 obj.total_time_modification = 0;
             end
             computeFeasibilityRegion(obj, state, input);
+            kin_constr = selectKinematicConstraint(obj, state);
             result = adaptTiming(obj, state);
             
         end
@@ -375,8 +376,22 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                       
         end
 
-        function result = selectKinematicConstraint(obj)
-            result = 0;
+        function result = selectKinematicConstraint(obj, state)
+            
+            x_u = state.x(1, 1) + state.x(2, 1) / obj.eta;
+            y_u = state.y(1, 1) + state.y(2, 1) / obj.eta;
+            i = 1;
+            while ~(obj.feasibility_region(1, i) <= x_u && obj.feasibility_region(2, i) >= x_u && obj.feasibility_region(3, i) <= y_u && obj.feasibility_region(4, i) >= y_u)   
+                i = i + 1; 
+                if i > obj.input.kar.number_of_subregions
+                    i = 1;
+                    break;
+                end
+            end
+            result = obj.input.kar.subregion_parameters(i, :)
+            if i > 1
+                1;    
+            end
         end
         
     end

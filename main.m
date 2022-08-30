@@ -55,8 +55,8 @@ input.scheme_parameters.v_max = 3;
 input.kar = struct;
 input.kar.number_of_subregions = 3;
 input.kar.subregion_parameters = [input.scheme_parameters.d_ax, input.scheme_parameters.ell_x, input.scheme_parameters.d_ay, input.scheme_parameters.ell_y; ...
-                                  0.15, 0.175, 0.12, 0.015; ...
-                                  0.15, -0.175, 0.12, 0.015];
+                                  0.15, 0.175, 0.15, 0.00; ...
+                                  0.15, -0.175, 0.15, 0.00];
 
 
 
@@ -195,10 +195,18 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     % get measurement (simulate pertuebations)
     state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/3)) ;
     state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/5)) ;    
+    
+    % disturbance and simple STA
+%     if sim_iter >= 230 && sim_iter < 240
+%         state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2.8 ;
+%         state.y(2, 1) = state.y(2, 1) - input.scheme_parameters.delta * 2.8 ;        
+%     end
+    
+    % disturbance and leg crossing
     if sim_iter >= 230 && sim_iter < 240
-        state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2.8 ;
-        state.y(2, 1) = state.y(2, 1) - input.scheme_parameters.delta * 2.8 ;        
-    end
+        state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2 ;
+        state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * 1 ;        
+    end    
     
     % solve step of gait generation algorithm
     state = wpg.update(state);

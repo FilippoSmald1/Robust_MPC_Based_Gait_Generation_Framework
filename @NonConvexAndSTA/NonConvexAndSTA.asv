@@ -37,14 +37,14 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             obj.eps_margin = 0.01;
             obj.eps_t = 0;
             obj.total_time_modification = 0;
-            
-        
+                    
         end
         
         function result = solve(obj, state, input)
 
             obj.index = state.world_time_iter - round( obj.input.footstep_plan.timings(state.footstep_counter, 1) / obj.input.scheme_parameters.delta ) + 1;
-
+            obj.input = input;
+            
             if obj.index <= 1
                 obj.total_time_modification
                 obj.total_time_modification = 0;
@@ -235,7 +235,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                                                                   + obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.x_f_minus_one + (obj.kinematic_buffer_x_M) * exp( - obj.eta * obj.T_p) ...
                                                                   - obj.x_f_0 * exp( - obj.eta * obj.T_c) ...
                                                                   + obj.tail_x + ( (obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0) )*( log(obj.mean) ) ...
-                                                                  - ((obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0));
+                                                                  - ((obj.x_f_0 - obj.x_f_minus_one) / ( obj.eta * obj.T_ds_0)) - state.w_bar(1,1) / obj.eta ^ 2;
 
                        end
 
@@ -247,7 +247,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                                                                   - obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.y_f_minus_one + (obj.kinematic_buffer_y_m) * exp( - obj.eta * obj.T_p) ...
                                                                   - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
                                                                   + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) )*( log(obj.mean) ) ...
-                                                                  - ((obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0));
+                                                                  - ((obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0)) - state.w_bar(2,1) / obj.eta ^ 2;
 
                            obj.linear_feasibility_region.a_y_M = obj.kinematic_and_temporal_buffer_y_M + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * (log( exp( - obj.eta * obj.T_ss_0)) ...
                                                                  - log(exp(- obj.eta * obj.T_s_0))) / (exp( - obj.eta * obj.T_ss_0 ) - exp( - obj.eta * obj.T_s_0 )) ...
@@ -257,7 +257,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                                                                   - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
                                                                   + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0) )*(log( exp( - obj.eta * obj.T_s_0 ))) ...
                                                                   - ((obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0)) * (log(exp(-obj.eta * obj.T_ss_0)) - log(exp(-obj.eta * obj.T_s_0))) ...
-                                                                  / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0);
+                                                                  / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0) - state.w_bar(2,1) / obj.eta ^ 2;
 
                        else
 
@@ -269,7 +269,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                                                                   - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
                                                                   + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0) )*(log( exp( - obj.eta * obj.T_s_0 ))) ...
                                                                   - ((obj.y_f_0 - obj.y_f_minus_one) / (obj.eta * obj.T_ds_0)) * (log(exp(-obj.eta * obj.T_ss_0)) - log(exp(-obj.eta * obj.T_s_0))) ...
-                                                                  / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0);                       
+                                                                  / (exp(-obj.eta * obj.T_ss_0) - exp(-obj.eta * obj.T_s_0)) * exp(- obj.eta * obj.T_s_0) - state.w_bar(2,1) / obj.eta ^ 2;                       
 
                            obj.linear_feasibility_region.a_y_M = obj.kinematic_and_temporal_buffer_y_M + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) ) * ( 1 / obj.mean ) + ...
                                                                   (obj.y_f_minus_one - obj.y_f_0) * exp(obj.eta * obj.T_ss_0) / (obj.eta * obj.T_ds_0);
@@ -277,7 +277,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                                                                   + obj.d_z * (1 - exp(-obj.eta * obj.T_c)) / 2 + obj.y_f_minus_one + (obj.kinematic_buffer_y_M) * exp( - obj.eta * obj.T_p) ...
                                                                   - obj.y_f_0 * exp( - obj.eta * obj.T_c) ...
                                                                   + obj.tail_y + ( (obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0) )*( log(obj.mean) ) ...
-                                                                  - ((obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0));
+                                                                  - ((obj.y_f_0 - obj.y_f_minus_one) / ( obj.eta * obj.T_ds_0)) - state.w_bar(2,1) / obj.eta ^ 2;
 
                        end
                    
@@ -289,29 +289,29 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                    x_u_m = + obj.kinematic_and_temporal_buffer_x_m * obj.Delta_lambda ...
                            + (obj.x_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) ...
                            + obj.kinematic_buffer_x_m * exp( - obj.eta * obj.T_p) ...
-                           + obj.tail_x;
+                           + obj.tail_x - state.w_bar(1,1) / obj.eta ^ 2;
                    x_u_M = + obj.kinematic_and_temporal_buffer_x_M * obj.Delta_lambda ...
                            + (obj.x_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) ...
                            + obj.kinematic_buffer_x_M * exp( - obj.eta * obj.T_p) ...
-                           + obj.tail_x;
+                           + obj.tail_x - state.w_bar(1,1) / obj.eta ^ 2;
                    y_u_m = + obj.kinematic_and_temporal_buffer_y_m * obj.Delta_lambda ...
                            + (obj.y_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) ...
                            + obj.kinematic_buffer_y_m * exp( - obj.eta * obj.T_p) ...
-                           + obj.tail_y;
+                           + obj.tail_y - state.w_bar(2,1) / obj.eta ^ 2;
                    y_u_M = + obj.kinematic_and_temporal_buffer_y_M * obj.Delta_lambda ...
                            + (obj.y_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) ...
                            + obj.kinematic_buffer_y_M * exp( - obj.eta * obj.T_p) ...
-                           + obj.tail_y;   
+                           + obj.tail_y - state.w_bar(2,1) / obj.eta ^ 2;   
                    
                    if i == 1
                        obj.linear_feasibility_region.a_x_m = obj.kinematic_and_temporal_buffer_x_m;
-                       obj.linear_feasibility_region.b_x_m = (obj.x_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_m * exp( - obj.eta * obj.T_p) + obj.tail_x;
+                       obj.linear_feasibility_region.b_x_m = (obj.x_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_m * exp( - obj.eta * obj.T_p) + obj.tail_x - state.w_bar(1,1) / obj.eta ^ 2;
                        obj.linear_feasibility_region.a_x_M = obj.kinematic_and_temporal_buffer_x_M;
-                       obj.linear_feasibility_region.b_x_M = (obj.x_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_M * exp( - obj.eta * obj.T_p) + obj.tail_x;
+                       obj.linear_feasibility_region.b_x_M = (obj.x_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_x_M * exp( - obj.eta * obj.T_p) + obj.tail_x - state.w_bar(1,1) / obj.eta ^ 2;
                        obj.linear_feasibility_region.a_y_m = obj.kinematic_and_temporal_buffer_y_m;
-                       obj.linear_feasibility_region.b_y_m = (obj.y_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_m * exp( - obj.eta * obj.T_p) + obj.tail_y;
+                       obj.linear_feasibility_region.b_y_m = (obj.y_f_minus_one - obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_m * exp( - obj.eta * obj.T_p) + obj.tail_y - state.w_bar(2,1) / obj.eta ^ 2;
                        obj.linear_feasibility_region.a_y_M = obj.kinematic_and_temporal_buffer_y_M;
-                       obj.linear_feasibility_region.b_y_M = (obj.y_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_M * exp( - obj.eta * obj.T_p) + obj.tail_y;
+                       obj.linear_feasibility_region.b_y_M = (obj.y_f_minus_one + obj.d_z / 2) * (1 - exp( - obj.eta * obj.T_c)) + obj.kinematic_buffer_y_M * exp( - obj.eta * obj.T_p) + obj.tail_y - state.w_bar(2,1) / obj.eta ^ 2;
                    end
                    
                end
@@ -375,8 +375,20 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
                       
         end
 
-        function result = selectKinematicConstraint(obj)
-            result = 0;
+        function result = selectKinematicConstraint(obj, state)
+            
+            x_u = state.x(1, 1) + state.x(2, 1) / obj.eta;
+            y_u = state.y(1, 1) + state.y(2, 1) / obj.eta;
+            feasible_regions = zeros(obj.input.kar.number_of_subregions, 1);
+            
+            for i = 1 : obj.input.kar.number_of_subregions
+            
+              if obj.feasibility_region(1, i) <= x_u && obj.feasibility_region(2, i) >= x_u && obj.feasibility_region(3, i) <= y_u && obj.feasibility_region(4, i) >= y_u
+                  feasible_regions(i, 1) = 1;
+              end
+                  
+            end
+            
         end
         
     end

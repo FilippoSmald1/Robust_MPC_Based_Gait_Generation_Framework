@@ -34,12 +34,9 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
             obj.H(obj.input.scheme_parameters.C+1 : obj.input.scheme_parameters.C + obj.input.scheme_parameters.M, obj.input.scheme_parameters.C+1 : obj.input.scheme_parameters.C + obj.input.scheme_parameters.M) = ...
                  obj.footstep_weight * eye(obj.input.scheme_parameters.M, obj.input.scheme_parameters.M);
                          
-            obj.d_ax = obj.input.scheme_parameters.d_ax; % this is the default kinematic admissible region (can be modified)
-            obj.d_ay = obj.input.scheme_parameters.d_ay;
-            obj.ell = obj.input.scheme_parameters.ell;
             obj.d_ax_subsequent = obj.input.scheme_parameters.d_ax_subsequent; % this is never modified
             obj.d_ay_subsequent = obj.input.scheme_parameters.d_ay_subsequent;
-            obj.ell_subsequent = obj.input.scheme_parameters.ell_subsequent;      
+            obj.ell_y_subsequent = obj.input.scheme_parameters.ell_subsequent;      
             
             obj.kin_constr_diff = eye(obj.input.scheme_parameters.M);
             for i = 2:obj.input.scheme_parameters.M
@@ -71,6 +68,10 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
         function [u, ftstp] = solve(obj, state, input)
             
             obj.input = input;   
+            obj.d_ax = obj.input.scheme_parameters.d_ax; % this is the default kinematic admissible region (can be modified)
+            obj.d_ay = obj.input.scheme_parameters.d_ay;
+            obj.ell_y = obj.input.scheme_parameters.ell_y;
+            obj.ell_x = obj.input.scheme_parameters.ell_x;
             
             obj.A_zmp_constr(1 : obj.input.scheme_parameters.C, obj.input.scheme_parameters.C + 1 : obj.input.scheme_parameters.C + obj.input.scheme_parameters.M) = - obj.input.footstep_plan.mapping(:, 2 : obj.input.scheme_parameters.M + 1);
             obj.A_zmp_constr(obj.input.scheme_parameters.C + 1 : 2 * obj.input.scheme_parameters.C, obj.input.scheme_parameters.C + 1 : obj.input.scheme_parameters.C + obj.input.scheme_parameters.M) =  obj.input.footstep_plan.mapping(:, 2 : obj.input.scheme_parameters.M + 1);
@@ -88,7 +89,7 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
                                  - obj.input.footstep_plan.tail_x(end,1) * exp( - obj.input.scheme_parameters.eta * obj.input.scheme_parameters.T_p) ...
                                  + state.w_bar(1,1) / obj.input.scheme_parameters.eta ^ 2;
             
-            obj.kin_constr_buffer(1, 1) = obj.d_ax / 2.0;
+            obj.kin_constr_buffer(1, 1) = obj.d_ax / 2.0 + obj.ell_x;
             for i = 2 : obj.input.scheme_parameters.M
                 obj.kin_constr_buffer(i, 1) = obj.d_ax_subsequent / 2.0;    
             end
@@ -148,13 +149,13 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
                 obj.sf_sign = - 1;
             end
 
-            obj.kin_constr_buffer_y(1, 1) = obj.d_ay / 2.0 + obj.sf_sign * obj.ell;
-            obj.kin_constr_buffer_y(1, 2) = - obj.d_ay / 2.0 + obj.sf_sign * obj.ell;                
+            obj.kin_constr_buffer_y(1, 1) = obj.d_ay / 2.0 + obj.sf_sign * obj.ell_y;
+            obj.kin_constr_buffer_y(1, 2) = - obj.d_ay / 2.0 + obj.sf_sign * obj.ell_y;                
 
             for i = 2 : obj.input.scheme_parameters.M
                 obj.sf_sign = - obj.sf_sign;
-                obj.kin_constr_buffer_y(i, 1) = obj.d_ay_subsequent / 2.0 + obj.sf_sign * obj.ell_subsequent;  
-                obj.kin_constr_buffer_y(i, 2) = - obj.d_ay_subsequent / 2.0 + obj.sf_sign * obj.ell_subsequent;
+                obj.kin_constr_buffer_y(i, 1) = obj.d_ay_subsequent / 2.0 + obj.sf_sign * obj.ell_y_subsequent;  
+                obj.kin_constr_buffer_y(i, 2) = - obj.d_ay_subsequent / 2.0 + obj.sf_sign * obj.ell_y_subsequent;
             end
             obj.b_kinematic_constr = [obj.kin_multiplier * state.sf_pos_ss(2,1) + obj.kin_constr_buffer_y(:, 1); ...
                                       - obj.kin_multiplier * state.sf_pos_ss(2,1) - obj.kin_constr_buffer_y(:, 2)];                            
@@ -242,10 +243,11 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
         b_kinematic_constr;
         d_ax;
         d_ay;
-        ell;
+        ell_y;
+        ell_x;
         d_ax_subsequent;
         d_ay_subsequent;
-        ell_subsequent; 
+        ell_y_subsequent; 
         kin_constr_diff;
         kin_constr_buffer;
         kin_multiplier;

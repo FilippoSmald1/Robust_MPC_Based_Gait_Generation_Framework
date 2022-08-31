@@ -67,7 +67,9 @@ classdef RecoveryMode < FeasibilityDrivenBase & handle
         
         function [u, ftstp] = solve(obj, state, input)
             
-            obj.input = input;   
+            obj.input = input;  
+            obj.feasibility_region = zeros(8, obj.input.kar.number_of_subregions);
+            
             obj.d_ax = obj.input.scheme_parameters.d_ax; % this is the default kinematic admissible region (can be modified)
             obj.d_ay = obj.input.scheme_parameters.d_ay;
             obj.ell_y = obj.input.scheme_parameters.ell_y;

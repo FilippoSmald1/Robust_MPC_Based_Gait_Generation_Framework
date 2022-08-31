@@ -2,10 +2,11 @@ classdef RobustGaitGenerationScheme < handle
 
     methods (Access = public)
 
-        function obj = RobustGaitGenerationScheme(input, state)
+        function obj = RobustGaitGenerationScheme(input, state, sim_parameters)
             
             % constructor
             obj.input = input;
+            obj.sim_parameters = sim_parameters;
             obj.sm_instance = StandardMode(obj.input);
             obj.rm_instance = RecoveryMode(obj.input);
             obj.rm_feasibility_processing = NonConvexAndSTA(obj.input);
@@ -46,46 +47,31 @@ classdef RobustGaitGenerationScheme < handle
             
              % update current footstep counter when new step begins
              if state.world_time_iter == round( (obj.input.footstep_plan.timings(state.footstep_counter, 1))/ obj.input.scheme_parameters.delta) + obj.input.footstep_plan.ds_samples
-           
                 state.sf_pos = state.next_sf_pos;
                 if state.current_sf == "right"
                    state.current_sf = "left"; 
                 else
                    state.current_sf = "right"; 
-                end
-                
+                end                
                 state.footstep_counter_rm = state.footstep_counter_rm + 1;
                 state.sf_pos_ss = state.next_sf_pos;  
-
-
-                obj.input.footstep_plan.positions(state.footstep_counter, :) = state.sf_pos';
-
-                %obj.input.footstep_plan.positions(state.footstep_counter, :) = state.sf_pos';
-                
-                obj.mode = 'standard_mode';
-                
+                obj.input.footstep_plan.positions(state.footstep_counter, :) = state.sf_pos';            
+                obj.mode = 'standard_mode';               
              end
              
-             if state.world_time_iter == round(obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta)
-                 
-                state.step_time_iter = 1;
-              
+             if state.world_time_iter == round(obj.input.footstep_plan.timings(state.footstep_counter + 1, 1) / obj.input.scheme_parameters.delta)            
+                state.step_time_iter = 1;           
                 state.sf_pos = state.next_sf_pos; 
                 state.sf_pos_ss = state.next_sf_pos;
                 state.footstep_counter = state.footstep_counter + 1;
-                state.footstep_counter_sm = state.footstep_counter + 1;
-                
-                obj.new_timings(state.footstep_counter, 1) = state.sim_iter;
-                
-                difference = obj.input.footstep_plan.positions(state.footstep_counter + 1, :) - state.sf_pos_ss';  
-                
+                state.footstep_counter_sm = state.footstep_counter + 1;                
+                obj.new_timings(state.footstep_counter, 1) = state.sim_iter;                
+                difference = obj.input.footstep_plan.positions(state.footstep_counter + 1, :) - state.sf_pos_ss';                 
                 obj.input.footstep_plan.positions(state.footstep_counter + 1, :) = state.sf_pos';
                 obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 1) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 1) - difference(1);
                 obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 2) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 2) - difference(2);
-                obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) - difference(3);                 
-               
-                obj.mode = 'standard_mode';
-                
+                obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) - difference(3);                                
+                obj.mode = 'standard_mode';                
              end
             
              % detect obstacles
@@ -109,20 +95,32 @@ classdef RobustGaitGenerationScheme < handle
              % detection)
              if obj.sm_instance.feasibilityCheck(state, obj.input) && ~obj.obstacles_are_present && strcmp(obj.mode, 'standard_mode') 
                 obj.mode = 'standard_mode'; 
+                if state.footstep_counter == 3 && strcmp(obj.sim_parameters.sim_type, 'obstacle')
+                    obj.mode = 'recovery_mode';    
+                end
              else
                 obj.mode = 'recovery_mode'; 
              end
-             %obj.mode = 'recovery_mode';
-               
-             % maybe STA (?) 
-               % recovery mode . STA
                    
              % control cycle
-             if obj.mode == 'standard_mode'
+             if strcmp(obj.mode, 'standard_mode')
                  [obj.u, obj.ftstp] = obj.sm_instance.solve(state, obj.input);
                  obj.feasibility_region = obj.sm_instance.getFeasibilityRegion();
                  state.feasibility_region = obj.feasibility_region;
              else
+                 obj.input.kar.number_of_subregions = 3;
+                 obj.input.kar.subregion_parameters = [0.5, 0, 0.25, 0.2; ...
+                                                       0.15, 0.175, 0.15, 0.00; ...
+                                                       0.15, -0.175, 0.15, 0.00];                 
+                 % obstacle detection 
+                 if state.footstep_counter == 3 && strcmp(obj.sim_parameters.sim_type, 'obstacle')
+                    obj.input.kar.number_of_subregions = 4;
+                    obj.input.kar.subregion_parameters = [0.5, 0.0, 0.15, 0.15; ...
+                                                          0.1, -0.015, 0.15, 0.15; ...
+                                                          0.15, 0.175, 0.15, 0.00; ...
+                                                          0.15, -0.175, 0.15, 0.00];
+                 end
+                 
                  [output, kin_constr] = obj.rm_feasibility_processing.solve(state, obj.input);               
                  if state.footstep_counter > 1 
                      state.world_time_iter = output;
@@ -135,9 +133,8 @@ classdef RobustGaitGenerationScheme < handle
                  state.feasibility_region = obj.rm_feasibility_processing.getFeasibilityRegion(); 
              end
              
-             % integrate LIP
-             state = obj.integrateModel(state, obj.u);
-                          
+             % integrate LIP and update target swing foot target
+             state = obj.integrateModel(state, obj.u);                      
              state.next_sf_pos = obj.ftstp;
                           
              % update counters
@@ -184,7 +181,7 @@ classdef RobustGaitGenerationScheme < handle
                  obj.input.footstep_plan.positions(state.footstep_counter : state.footstep_counter + obj.input.scheme_parameters.F + 1, 1:2);
              
              time_counter = 1;
-             for i = 1 : obj.input.scheme_parameters.F + 1
+             for i = 1 : obj.input.schemeleg_crossing_parameters.F + 1
                  
                  obj.ss_samples = round( (obj.input.footstep_plan.timings(i + 1, 1) - obj.input.footstep_plan.timings(i, 1)) / obj.input.scheme_parameters.delta ) - ...
                                   obj.input.footstep_plan.ds_samples;
@@ -247,7 +244,7 @@ classdef RobustGaitGenerationScheme < handle
         
         function timings = getNewTimings(obj)
             
-            timings = obj.new_timings
+            timings = obj.new_timings;
             
         end
 
@@ -274,6 +271,7 @@ classdef RobustGaitGenerationScheme < handle
         rm_feasibility_processing;
         dob_instance;
         restriction_builder;
+        sim_parameters;
         
         % variables
         u;

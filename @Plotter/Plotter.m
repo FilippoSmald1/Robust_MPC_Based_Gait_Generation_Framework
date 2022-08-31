@@ -2,9 +2,10 @@ classdef Plotter < handle
     
     methods (Access = public)
         
-        function obj = Plotter(logs, input)
+        function obj = Plotter(logs, input, simulation_parameters)
             % the constructor is just a setter
             obj.logs = logs;
+            obj.sim_parameters = simulation_parameters;
             obj.input = input;
             obj.color = [0.4660 0.6740 0.1880];
             obj.color_estimate = [0.2660 0.3740 0.8880];
@@ -18,6 +19,16 @@ classdef Plotter < handle
                              -obj.input.scheme_parameters.d_z / 2, ...
                              obj.input.scheme_parameters.d_z / 2, ...
                              obj.input.scheme_parameters.d_z / 2];
+            obj.initial_ds = [obj.input.scheme_parameters.d_z / 2, ...
+                             obj.input.scheme_parameters.d_z / 2, ...
+                             -obj.input.scheme_parameters.d_z / 2, ...
+                             -obj.input.scheme_parameters.d_z / 2, ...
+                             obj.input.scheme_parameters.d_z / 2; ...
+                             0.09+obj.input.scheme_parameters.d_z / 2, ...
+                             -0.09-obj.input.scheme_parameters.d_z / 2, ...
+                             -0.09-obj.input.scheme_parameters.d_z / 2, ...
+                             0.09+obj.input.scheme_parameters.d_z / 2, ...
+                             0.09+obj.input.scheme_parameters.d_z / 2];                         
         end
         
         function obj = plotLogs(obj, logs, state)
@@ -30,9 +41,15 @@ classdef Plotter < handle
             grid on;
             com = plot(logs.x_store(1, 1:state.sim_iter - 1), logs.y_store(1, 1:state.sim_iter - 1), 'r', 'Linewidth', 2);
             zmp = plot(logs.x_store(3, 1:state.sim_iter - 1), logs.y_store(3, 1:state.sim_iter - 1), 'b', 'Linewidth', 2);
-            for i = 1 : state.footstep_counter
-                c = plot(obj.rectangle(1,:) + logs.actual_footsteps(1,i), obj.rectangle(2,:) + logs.actual_footsteps(2,i), 'm','Linewidth',2, 'Handlevisibility', 'off');
+            
+            c = plot(obj.initial_ds(1,:), obj.initial_ds(2,:), 'm', 'Linewidth',2, 'Handlevisibility', 'off');
+            
+            if state.footstep_counter >= 1
+                for i = 2 : state.footstep_counter
+                    c = plot(obj.rectangle(1,:) + logs.actual_footsteps(1,i), obj.rectangle(2,:) + logs.actual_footsteps(2,i), 'm','Linewidth',2, 'Handlevisibility', 'off');
+                end
             end
+  
             rectangle_feasibility = [state.feasibility_region(2,1), state.feasibility_region(2,1), state.feasibility_region(1,1), state.feasibility_region(1,1), state.feasibility_region(2,1); ...
                                      state.feasibility_region(4,1), state.feasibility_region(3,1), state.feasibility_region(3,1), state.feasibility_region(4,1), state.feasibility_region(4,1)];
                                  
@@ -55,7 +72,23 @@ classdef Plotter < handle
             
             feas_region_patch = patch(rectangle_feasibility(1,:), rectangle_feasibility(2,:), obj.color);
             feas_region_patch.FaceAlpha = 0.3;
-            feas_region_patch.EdgeColor = [0.2660 0.3740 0.8880];            
+            feas_region_patch.EdgeColor = [0.2660 0.3740 0.8880];     
+            
+            if strcmp(obj.sim_parameters.sim_type, 'obstacle')
+                
+                for i = 1 : obj.sim_parameters.obstacle_number
+                    
+                    x_m = obj.sim_parameters.obstacles(i, 1) - obj.sim_parameters.obstacles(i, 3) / 2;
+                    x_M = obj.sim_parameters.obstacles(i, 1) + obj.sim_parameters.obstacles(i, 3) / 2;
+                    y_m = obj.sim_parameters.obstacles(i, 2) - obj.sim_parameters.obstacles(i, 4) / 2; 
+                    y_M = obj.sim_parameters.obstacles(i, 2) + obj.sim_parameters.obstacles(i, 4) / 2; 
+                    object = [x_M, x_M, x_m, x_m, x_M; y_M, y_m, y_m, y_M, y_M];
+                    object_patch = patch(object(1,:), object(2,:), 'k'); 
+                    object_ptch.FaceAlpha = 0.3;
+                    
+                end
+                
+            end
             
 %             feas_region_patch_estimate = patch(rectangle_feasibility_estimate(1,:), rectangle_feasibility_estimate(2,:), obj.color_estimate);
 %             feas_region_patch_estimate.FaceAlpha = 0.1;
@@ -75,9 +108,11 @@ classdef Plotter < handle
     properties (Access = private)
     
         logs;
+        sim_parameters;
         input;
         figure_handle;
         rectangle;
+        initial_ds;
         color;
         color_estimate;
         counter;

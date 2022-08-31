@@ -348,7 +348,8 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             if obj.index <= obj.input.footstep_plan.ds_samples
                 obj.eps_t = obj.T_ss_0 + max( abs(obj.input.footstep_plan.zmp_centerline_x(1,1) - obj.x_f_0), abs(obj.input.footstep_plan.zmp_centerline_y(1,1) - obj.y_f_0) ) / obj.input.scheme_parameters.v_max;
             else
-                % using the cneterline instead of the swing foot velocity
+                % using the centerline instead of the swing foot velocity
+                % as in Matlab we do not have moving feet
                 obj.eps_t = max( abs(obj.input.footstep_plan.zmp_centerline_x(1,1) - obj.x_f_0), abs(obj.input.footstep_plan.zmp_centerline_y(1,1) - obj.y_f_0) ) / obj.input.scheme_parameters.v_max;                
             end
                 
@@ -384,14 +385,14 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             while ~(obj.feasibility_region(1, i) <= x_u && obj.feasibility_region(2, i) >= x_u && obj.feasibility_region(3, i) <= y_u && obj.feasibility_region(4, i) >= y_u)   
                 i = i + 1; 
                 if i > obj.input.kar.number_of_subregions
+                    % if none of the regions is feasible, reinitialize the
+                    % counter and pick the first region in the list, which
+                    % has the highest priority
                     i = 1;
                     break;
                 end
             end
-            result = obj.input.kar.subregion_parameters(i, :)
-            if i > 1
-                1;    
-            end
+            result = obj.input.kar.subregion_parameters(i, :);
         end
         
     end

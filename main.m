@@ -51,7 +51,9 @@ input.scheme_parameters.zmp_track_in_cost_function = 0.01;
 input.scheme_parameters.v_max = 3;
 
 
-% to handle non-convex constraints
+%% handling non-convex constraints
+% we begin with the standard convex KAR, plus two subregions that enable
+% leg crossing maneuvers
 input.kar = struct;
 input.kar.number_of_subregions = 3;
 input.kar.subregion_parameters = [input.scheme_parameters.d_ax, input.scheme_parameters.ell_x, input.scheme_parameters.d_ay, input.scheme_parameters.ell_y; ...
@@ -59,9 +61,7 @@ input.kar.subregion_parameters = [input.scheme_parameters.d_ax, input.scheme_par
                                   0.15, -0.175, 0.15, 0.00];
 
 
-
-
-% footstep plan
+%% footstep plan
 input.footstep_plan = struct;
 input.footstep_plan.total_step_number = 18;
 input.footstep_plan.positions = zeros(input.footstep_plan.total_step_number + 4,3);
@@ -80,7 +80,7 @@ input.footstep_plan.mapping_buffer = zeros(2 * input.scheme_parameters.P, input.
 input.sim_time = 10;
 
 % build a simple footstep plan in the world frame
-stride_length_x = 0.15;
+stride_length_x = 0.2;
 lateral_displacement_y = 0.09;
 
 number_of_virtual_steps = 4;
@@ -98,14 +98,14 @@ for i = 1 : input.footstep_plan.total_step_number + number_of_virtual_steps
    end
    input.footstep_plan.positions(i, 3) = 0;
 
-   % footstep orientations (TODO)
-     % zeros
+   % footstep orientations (not considering orientation for simplicity)
+     % keep all to zero
 
    % timings
    input.footstep_plan.timings(i, 1) = 1 *  (i - 1);
 
-   % mapping to define the running steps (for further developments)
-     % zeros
+   % mapping to define the running steps (not considering flight phases here)
+     % keep all to zero
 
 end
 
@@ -124,8 +124,11 @@ disp(input.footstep_plan.timings)
 %% simulation parameters
 simulation_parameters = struct;
 simulation_parameters.delta = input.scheme_parameters.delta; %TODO: enable different operating frequencies
-simulation_parameters.sim_time = 5;
+simulation_parameters.sim_time = 8;
 simulation_parameters.sim_iter = 1;
+simulation_parameters.sim_type = 'obstacle'; % 'basic_test', 'leg_crossing', 'obstacle'
+simulation_parameters.obstacle_number = 1;
+simulation_parameters.obstacles = [0.6 -0.09 0.05 0.05]; % x,y, size_x, size_y
 
 
 %% state data 
@@ -161,7 +164,7 @@ logs.feasibility_region_3 = zeros(8, floor(simulation_parameters.sim_time/simula
 
 
 %% initialize plotter
-plotter = Plotter(logs, input);
+plotter = Plotter(logs, input, simulation_parameters);
 
 
 %% CONTROLLER & SIMULATION START OPERATING HERE:
@@ -170,7 +173,7 @@ plotter = Plotter(logs, input);
 %
 %
 %% initialize the Robust Gait Generation Framework
-wpg = RobustGaitGenerationScheme(input, state); % walking pattern generator
+wpg = RobustGaitGenerationScheme(input, state, simulation_parameters); % walking pattern generator
 
 
 %% request back-up maneuver to initialize the controller (simulated)
@@ -197,17 +200,24 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * (0.15 + 0.1 * sin(2*pi*sim_iter*0.01/5)) ;    
     
     % disturbance and simple STA
-%     if sim_iter >= 230 && sim_iter < 240
-%         state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2.8 ;
-%         state.y(2, 1) = state.y(2, 1) - input.scheme_parameters.delta * 2.8 ;        
-%     end
-    
-    % disturbance and leg crossing
-    if sim_iter >= 230 && sim_iter < 240
-        state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2 ;
-        state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * 1 ;        
+    if strcmp(simulation_parameters.sim_type, 'basic_test')
+        if sim_iter >= 230 && sim_iter < 240
+            state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2.8 ;
+            state.y(2, 1) = state.y(2, 1) - input.scheme_parameters.delta * 3.5 ;
+        end
+    end
+    if strcmp(simulation_parameters.sim_type, 'leg_crossing')
+        if sim_iter >= 230 && sim_iter < 240
+            state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2.5 ;
+            state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * 1.5 ;
+        end
+    end
+    if strcmp(simulation_parameters.sim_type, 'obstacle')
+        if sim_iter >= 330 && sim_iter < 340
+            state.x(2, 1) = state.x(2, 1) + input.scheme_parameters.delta * 2 ;
+            state.y(2, 1) = state.y(2, 1) + input.scheme_parameters.delta * 2 ;
+        end
     end    
-    
     % solve step of gait generation algorithm
     state = wpg.update(state);
     state.sim_iter = sim_iter;
@@ -221,14 +231,16 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     logs.feasibility_region_2(:, sim_iter) = state.feasibility_region(:, 2);
     logs.feasibility_region_3(:, sim_iter) = state.feasibility_region(:, 3);
 
-    if sim_iter == 3
+    if sim_iter == 3 && false
         plotter.plotLogs(logs, state);
     end
     if mod(sim_iter, 1) == 0
         plotter.plotLogs(logs, state);
     end
     
-   
+    if state.footstep_counter >= 3
+            1;    
+    end   
 end
 %
 %

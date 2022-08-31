@@ -85,6 +85,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
         function is_feasible = feasibilityCheck(obj, state, input)
           
             obj.input = input;
+            obj.feasibility_region = zeros(8, obj.input.kar.number_of_subregions);
             obj.x_u_m = obj.centerline_multiplier * (obj.input.footstep_plan.zmp_centerline_x - obj.input.scheme_parameters.d_z/2 + obj.restriction_x) ...
                         + obj.tail_multiplier * obj.input.footstep_plan.tail_x ...
                         - state.w_bar(1,1) / obj.input.scheme_parameters.eta ^ 2;
@@ -111,6 +112,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
         function obj = computeFeasibilityRegion(obj, state, input)
             
             obj.input = input;
+            obj.feasibility_region = zeros(8, obj.input.kar.number_of_subregions);
             obj.x_u_m = obj.centerline_multiplier * (obj.input.footstep_plan.zmp_centerline_x - obj.input.scheme_parameters.d_z/2 + obj.restriction_x) ...
                         + obj.tail_multiplier * obj.input.footstep_plan.tail_x ...
                         - state.w_bar(1,1) / obj.input.scheme_parameters.eta ^ 2;

@@ -7,12 +7,6 @@
 
 clc; clf; clear all; close all;
 
-using_octave = false;
-if using_octave
-   pkg load optim;
-   pkg load control;
-end
-
 
 %% input data for the scheme
 input = struct;
@@ -126,7 +120,7 @@ simulation_parameters = struct;
 simulation_parameters.delta = input.scheme_parameters.delta; %TODO: enable different operating frequencies
 simulation_parameters.sim_time = 8;
 simulation_parameters.sim_iter = 1;
-simulation_parameters.sim_type = 'obstacle'; % 'basic_test', 'leg_crossing', 'obstacle'
+simulation_parameters.sim_type = 'leg_crossing'; % 'basic_test', 'leg_crossing', 'obstacle'
 simulation_parameters.obstacle_number = 1;
 simulation_parameters.obstacles = [0.6 -0.09 0.05 0.05]; % x,y, size_x, size_y
 
@@ -161,6 +155,7 @@ logs.actual_footsteps = zeros(3, input.footstep_plan.total_step_number); % x, y,
 logs.feasibility_region = zeros(8, floor(simulation_parameters.sim_time/simulation_parameters.delta));
 logs.feasibility_region_2 = zeros(8, floor(simulation_parameters.sim_time/simulation_parameters.delta));
 logs.feasibility_region_3 = zeros(8, floor(simulation_parameters.sim_time/simulation_parameters.delta));
+logs.feasibility_region_full_logs = zeros(8, floor(simulation_parameters.sim_time/simulation_parameters.delta), 6);
 
 
 %% initialize plotter
@@ -228,19 +223,27 @@ for sim_iter = 1 : floor(simulation_parameters.sim_time / simulation_parameters.
     logs.w_bar(:, simulation_parameters.sim_iter) = wpg.getDisturbance();
     logs.actual_footsteps(:, state.footstep_counter) = state.sf_pos;
     logs.feasibility_region(:, sim_iter) = state.feasibility_region(:, 1);
-    logs.feasibility_region_2(:, sim_iter) = state.feasibility_region(:, 2);
-    logs.feasibility_region_3(:, sim_iter) = state.feasibility_region(:, 3);
+    
+    for k = 1 : size(state.feasibility_region, 2)
+        logs.feasibility_region_full_logs(:, sim_iter, k) = state.feasibility_region(:, k);  
+    end
+    
 
     if sim_iter == 3 && false
         plotter.plotLogs(logs, state);
     end
-    if mod(sim_iter, 1) == 0
-        plotter.plotLogs(logs, state);
+    if mod(sim_iter, 50) == 0 && false
+        plotter.plotLogsAtTimeK(logs, state, sim_iter);
     end
     
     if state.footstep_counter >= 3
             1;    
-    end   
+    end  
+    
+    str = num2str( sim_iter / floor(simulation_parameters.sim_time / simulation_parameters.delta) * 100 );
+    str = strcat('simulation is at', " ", str, '%');
+    disp(str)
+    
 end
 %
 %
@@ -248,45 +251,7 @@ end
 %
 %% CONTROLLER & SIMULATION STOP OPERATING HERE
 
-%% plot the logs
-time = 0 : simulation_parameters.delta : simulation_parameters.sim_time - simulation_parameters.delta;
-figure(2)
-clf
-hold on
-grid on
-plot(logs.feasibility_region(1,:), 'r', 'Linewidth', 2)
-plot(logs.feasibility_region(2,:), 'r', 'Linewidth', 2)
-plot(logs.feasibility_region_2(1,:), 'b')
-plot(logs.feasibility_region_2(2,:), 'b')
-plot(logs.feasibility_region_3(1,:), 'g')
-plot(logs.feasibility_region_3(2,:), 'g')
-% plot(logs.feasibility_region(5,:))
-% plot(logs.feasibility_region(6,:))
+%% plot the logs at a certain time 
+t_k = 6.5;
+plotter.plotLogsAtTimeK(logs, state, floor(t_k / simulation_parameters.delta));
 
-figure(3)
-clf
-hold on
-grid on
-plot(logs.feasibility_region(3,:), 'r', 'Linewidth', 2)
-plot(logs.feasibility_region(4,:), 'r', 'Linewidth', 2)
-%plot(logs.feasibility_region(7,:))
-%plot(logs.feasibility_region(8,:))
-plot(logs.feasibility_region_2(3,:), 'b')
-plot(logs.feasibility_region_2(4,:), 'b')
-plot(logs.feasibility_region_3(3,:), 'g')
-plot(logs.feasibility_region_3(4,:), 'g')
-
-%{
-f = figure(1);
-clf;
-hold on;
-grid on;
-plot(time', logs.w_bar(1, :)', 'Linewidth', 2);
-pbaspect([2 1 1]);
-
-figure(2)
-hold on
-grid on
-plot(logs.feasibility_region(1,:))
-plot(logs.feasibility_region(2,:))
-%}

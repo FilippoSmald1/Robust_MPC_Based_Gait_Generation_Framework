@@ -143,9 +143,6 @@ classdef RobustGaitGenerationScheme < handle
              % return updated state structure
              state_ = state; 
              
-             obj.ftstp
-             state.step_time_iter
-             
         end
         
         function init_state_proposal = proposeFeasibleInitialState(obj, state)

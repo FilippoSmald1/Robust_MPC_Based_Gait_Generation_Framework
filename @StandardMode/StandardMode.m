@@ -38,6 +38,8 @@ classdef StandardMode < FeasibilityDrivenBase & handle
             obj.restriction_x = obj.restriction_builder.getRestrictionX();
             obj.restriction_y = obj.restriction_builder.getRestrictionY();
             
+            obj.options = optimoptions(@quadprog, 'Display','off');
+            
         end
         
         function [u, ftstp] = solve(obj, state, input)
@@ -55,7 +57,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
                        + state.w_bar(1,1) / obj.input.scheme_parameters.eta ^ 2;
         
             obj.f = - 2 * obj.zmp_tracking_weight * (obj.input.footstep_plan.zmp_centerline_x' - state.x(3,1)) * obj.P_matrix;
-            solution = quadprog(obj.H, obj.f, obj.A_ineq, obj.b_ineq, obj.A_eq, obj.b_eq);
+            solution = quadprog(obj.H, obj.f, obj.A_ineq, obj.b_ineq, obj.A_eq, obj.b_eq, [], [], [], obj.options);
             u(1,1) = solution(1);
             
             % y component
@@ -69,7 +71,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
                        + state.w_bar(2,1) / obj.input.scheme_parameters.eta ^ 2;
           
             obj.f = - 2 * obj.zmp_tracking_weight * (obj.input.footstep_plan.zmp_centerline_y' - state.y(3,1)) * obj.P_matrix;
-            solution = quadprog(obj.H, obj.f, obj.A_ineq, obj.b_ineq, obj.A_eq, obj.b_eq);
+            solution = quadprog(obj.H, obj.f, obj.A_ineq, obj.b_ineq, obj.A_eq, obj.b_eq, [], [], [], obj.options);
             u(2,1) = solution(1);
             
             % next footstep is given by the plan
@@ -163,6 +165,7 @@ classdef StandardMode < FeasibilityDrivenBase & handle
         restriction_y;
         restriction_builder;
         index;
+        options;
         
     end
     

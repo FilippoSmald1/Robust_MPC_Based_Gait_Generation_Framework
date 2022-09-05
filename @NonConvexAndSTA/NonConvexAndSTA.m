@@ -37,6 +37,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             obj.eps_margin = 0.01;
             obj.eps_t = 0;
             obj.total_time_modification = 0;
+            obj.options = optimoptions(@quadprog, 'Display','off');
                     
         end
         
@@ -46,7 +47,6 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             obj.input = input;
             
             if obj.index <= 1
-                obj.total_time_modification
                 obj.total_time_modification = 0;
             end
             computeFeasibilityRegion(obj, state, input);
@@ -356,7 +356,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
             obj.A_timing_qp(7, :) = [1, 0, 0];   
             obj.b_timing_qp(7, 1) = exp( - obj.eta * obj.eps_t);
             
-            sta = quadprog(obj.H_timing_qp, obj.f_timing_qp, obj.A_timing_qp, obj.b_timing_qp);
+            sta = quadprog(obj.H_timing_qp, obj.f_timing_qp, obj.A_timing_qp, obj.b_timing_qp, [], [], [], [], [], obj.options);   
             
             result = state.world_time_iter;
             if ~isempty(sta)
@@ -443,6 +443,7 @@ classdef NonConvexAndSTA < FeasibilityDrivenBase & handle
         eps_t;
         total_time_modification;
         new_timings;
+        options;
         
     end
             

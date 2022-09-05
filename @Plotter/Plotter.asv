@@ -137,17 +137,15 @@ classdef Plotter < handle
                 if j == 1
                     feas_region_patch = patch(rectangle_feasibility(1,:), rectangle_feasibility(2,:), obj.color_green);
                     feas_region_patch.FaceAlpha = 0.3;
-                    feas_region_patch.EdgeColor = [0.2660 0.6740 0.1180];
+                    feas_region_patch.EdgeColor = [0.4660 0.8740 0.1880];
                 else
                     feas_region_patch = patch(rectangle_feasibility(1,:), rectangle_feasibility(2,:), obj.color_blue);
-                    feas_region_patch.FaceAlpha = 0.23;
-                    feas_region_patch.EdgeColor = [0.2660 0.6740 0.1180];                    
+                    feas_region_patch.FaceAlpha = 0.3;
+                    feas_region_patch.EdgeColor = [0.4660 0.8740 0.1880];                    
                 end
             end  
             
-            feas_region_patch = patch(rectangle_feasibility(1,:) + 5, rectangle_feasibility(2,:) + 5, obj.color_blue);
-            feas_region_patch.FaceAlpha = 0.0;
-            feas_region_patch.EdgeColor = [0.2660 0.6740 0.1180]; 
+            feas_region_patch = patch(rectangle_feasibility(1,:), rectangle_feasibility(2,:), obj.color_blue);
             
             if strcmp(obj.sim_parameters.sim_type, 'obstacle')
                 
@@ -173,23 +171,11 @@ classdef Plotter < handle
                           'g','Linewidth',2);
             axis equal
             axis([-0.1 1.5 -0.3 0.5])
-            l = legend([dcm, com, zmp, feas_region_patch], {'$x_u^k, y_u^k$','CoM', 'ZMP', 'feasibility regions'});
             if strcmp(obj.sim_parameters.sim_type, 'basic_test')
                 axis([-0.1 1.5 -0.3 0.5]) 
             end
-            if strcmp(obj.sim_parameters.sim_type, 'leg_crossing')
-                axis([-0.1 1.5 -0.3 0.5]) 
-                l = legend([dcm, com, zmp, feas_region_patch], {'$x_u^k, y_u^k$','CoM', 'ZMP', 'feasibility regions'}, 'Location', 'Southeast');
-            end  
-            if strcmp(obj.sim_parameters.sim_type, 'obstacle')
-                axis([-0.1 1.5 -0.45 0.3]) 
-                l = legend([dcm, com, zmp, feas_region_patch], {'$x_u^k, y_u^k$','CoM', 'ZMP', 'feasibility regions'}, 'Location', 'Southeast');                
-            end            
             pbaspect([2 1 1]);
-            
-            xlabel('x [m]')
-            ylabel('y [m]')
-            
+            l = legend([dcm, com, zmp, feas_region_patch], {'$x_u^k, y_u^k$','CoM', 'ZMP', 'feasibility regions'});
             set(l,'Fontsize',12)
             set(l,'Interpreter','latex')
             

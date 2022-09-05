@@ -28,7 +28,7 @@ classdef DisturbanceObserver < handle
             obj.max_increment(1,1) = 2 * input.scheme_parameters.alpha * input.scheme_parameters.dist_range(1,1) * (exp(eta * delta) - 1);
             obj.max_increment(2,1) = 2 * input.scheme_parameters.alpha * input.scheme_parameters.dist_range(2,1) * (exp(eta * delta) - 1);
             obj.is_saturator_active = true;
-
+            obj.options = optimoptions(@quadprog, 'Display', 'off');
 
         end
 
@@ -45,13 +45,13 @@ classdef DisturbanceObserver < handle
                                         [obj.input.scheme_parameters.midrange(1,1) + obj.input.scheme_parameters.dist_range(1,1); ...
                                          - obj.input.scheme_parameters.midrange(1,1) + obj.input.scheme_parameters.dist_range(1,1); ...
                                          obj.w_bar(1,1) + obj.max_increment(1,1); ...
-                                        -obj.w_bar(1,1) + obj.max_increment(1,1)]);
+                                        -obj.w_bar(1,1) + obj.max_increment(1,1)], [], [], [], [], [], obj.options);
                 obj.w_bar(2,1) = quadprog(1, -obj.state_y(4), ...
                                         [1; -1; 1; -1], ...
                                         [obj.input.scheme_parameters.midrange(2,1) + obj.input.scheme_parameters.dist_range(2,1); ...
                                          - obj.input.scheme_parameters.midrange(2,1) + obj.input.scheme_parameters.dist_range(2,1); ...
                                          obj.w_bar(2,1) + obj.max_increment(2,1); ...
-                                        -obj.w_bar(2,1) + obj.max_increment(2,1)]);
+                                        -obj.w_bar(2,1) + obj.max_increment(2,1)], [], [], [], [], [], obj.options);
             else 
                 obj.w_bar(1,1) = obj.state_x(4,1);
                 obj.w_bar(2,1) = obj.state_y(4,1);
@@ -79,6 +79,7 @@ classdef DisturbanceObserver < handle
         max_increment;
         input; 
         is_saturator_active;
+        options;
 
     end
 

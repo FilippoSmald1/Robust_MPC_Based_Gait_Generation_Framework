@@ -73,13 +73,6 @@ classdef RobustGaitGenerationScheme < handle
                 obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) = obj.input.footstep_plan.positions(state.footstep_counter + 2 : end, 3) - difference(3);                                
                 obj.mode = 'standard_mode';                
              end
-            
-             % detect obstacles
-             % TODO
-             
-             % TODO: nonconvex handling -> modify the input.d_ax,
-             % input.d_ay, input. ell
-             % 
              
              % observer
              obj.dob_instance.update([state.x(1,1); state.x(3,1)], ...
